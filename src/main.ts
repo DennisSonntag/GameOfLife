@@ -14,7 +14,6 @@ const colorPicker = <HTMLInputElement>document.getElementById('color')
 
 const startingElements = [randomBtn, clearBtn, startBtn, colorPicker]
 
-
 const previousBtn = document.getElementById('prev') as HTMLElement
 const resetBtn = document.getElementById('reset') as HTMLElement
 const nextBtn = document.getElementById('next') as HTMLElement
@@ -39,14 +38,14 @@ const colors = {
 }
 const sliderMax = Number(sizeSlider.getAttribute('max'))
 
-let hasStopped = false
 let generation = 0
+let sideLengthCells = 8
+let hasStopped = false
 let reversing = false
 let playing = false
 // true = draw; false = erase;
-let drawMode = true
 let isDragging = false
-let sideLengthCells = 8
+let drawMode = true
 // let simulationEnd = false
 let PreviousGens: number[][][] = []
 
@@ -210,9 +209,7 @@ const fillRandom = () => {
 				const [randomColor, hue] = hslString(colorsOfTheRainbow[Math.floor(Math.random() * 6)])
 				boardColor[row][col] = Number(hue)
 				div.style.backgroundColor = String(randomColor)
-			} else if (board[row][col] === 0 && div != null) {
-				div.style.backgroundColor = 'white'
-			}
+			} else if (board[row][col] === 0 && div != null) div.style.backgroundColor = 'white'
 			count++
 		}
 	}
@@ -244,10 +241,8 @@ const renderCanvas = () => {
 			let hue = 0
 			for (let i = -1; i < 2; i++) {
 				for (let j = -1; j < 2; j++) {
-					if (i === 0 && j === 0) {
-						// skip if the cell selected is the middle
-						continue
-					}
+					// skip if the cell selected is the middle
+					if (i === 0 && j === 0) continue
 					const x = row + i,
 						y = col + j
 					if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
@@ -260,18 +255,13 @@ const renderCanvas = () => {
 					}
 				}
 			}
-			// console.log(averageHueOfParents);
-			if (generation > 2 && cell === 1 && numNeighbours === 3) {
-				// if the generation is greater than 2 and the the cell is a child
-				// average hue of parents
-				ctx.fillStyle = String(hslString(hue / numNeighbours)[0])
-			} else if (generation <= 2 && cell === 1) {
-				// use default color when its the first 2 generations
-				ctx.fillStyle = String(hslString(getValueFromIndex(row * sideLengthCells + col))[0])
-			} else if (cell === 0) {
-				// if cell is dead
-				ctx.fillStyle = 'white'
-			}
+			// if the generation is greater than 2 and the the cell is a child
+			// average hue of parents
+			if (generation > 2 && cell === 1 && numNeighbours === 3) ctx.fillStyle = String(hslString(hue / numNeighbours)[0])
+			// use default color when its the first 2 generations
+			else if (generation <= 2 && cell === 1) ctx.fillStyle = String(hslString(getValueFromIndex(row * sideLengthCells + col))[0])
+			// if cell is dead
+			else if (cell === 0) ctx.fillStyle = 'white'
 			// default black and white behavior
 			// ctx.fillStyle = cell ? "black" : "white";
 			ctx.fill()
@@ -293,9 +283,7 @@ const play = () => {
 		next()
 		requestAnimationFrame(play)
 	}, 100)
-	if (!playing || reversing) {
-		clearTimeout(gameLoop)
-	}
+	if (!playing || reversing) clearTimeout(gameLoop)
 }
 
 const reverse = () => {
@@ -303,9 +291,7 @@ const reverse = () => {
 		prev()
 		requestAnimationFrame(reverse)
 	}, 100)
-	if (!reversing || playing) {
-		clearTimeout(reverseLoop)
-	}
+	if (!reversing || playing) clearTimeout(reverseLoop)
 }
 
 const prev = () => {
@@ -338,11 +324,8 @@ const clearBoard = () => {
 }
 
 const checkColor = (row: number, col: number, div: HTMLDivElement) => {
-	if (board[row][col] === 1) {
-		div.style.backgroundColor = colors.draw
-	} else if (board[row][col] === 0) {
-		div.style.backgroundColor = colors.light
-	}
+	if (board[row][col] === 1) div.style.backgroundColor = colors.draw
+	else if (board[row][col] === 0) div.style.backgroundColor = colors.light
 }
 
 const bounceAnim = (div: HTMLDivElement) => {
@@ -397,10 +380,9 @@ const calculateNextGeneration = (grid: number[][]) => {
 			let numNeighbours = 0
 			for (let i = -1; i < 2; i++) {
 				for (let j = -1; j < 2; j++) {
-					if (i === 0 && j === 0) {
-						// skip if selected cell is the middle
-						continue
-					}
+					// skip if selected cell is the middle
+					if (i === 0 && j === 0) continue
+
 					const x = row + i,
 						y = col + j
 					if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
@@ -409,13 +391,9 @@ const calculateNextGeneration = (grid: number[][]) => {
 				}
 			}
 			// rules
-			if (oldCell === 1 && numNeighbours < 2) {
-				gridCopy[row][col] = 0
-			} else if (oldCell === 1 && numNeighbours > 3) {
-				gridCopy[row][col] = 0
-			} else if (oldCell === 0 && numNeighbours === 3) {
-				gridCopy[row][col] = 1
-			}
+			if (oldCell === 1 && numNeighbours < 2) gridCopy[row][col] = 0
+			else if (oldCell === 1 && numNeighbours > 3) gridCopy[row][col] = 0
+			else if (oldCell === 0 && numNeighbours === 3) gridCopy[row][col] = 1
 		}
 	}
 	return gridCopy
@@ -428,7 +406,6 @@ window.addEventListener('load', () => {
 	populate()
 	changeBoardSize(sideLengthCells)
 })
-
 window.addEventListener('mousedown', (e: any) => {
 	const event = e.target
 	if (event.className !== 'place') return
@@ -439,15 +416,12 @@ window.addEventListener('mousedown', (e: any) => {
 window.addEventListener('mouseup', () => {
 	isDragging = false
 })
-
 colorPicker.addEventListener('input', () => {
 	colors.draw = colorPicker.value
 })
-
 previousBtn.addEventListener('click', () => {
 	prev()
 })
-
 resetBtn.addEventListener('click', () => {
 	reset()
 })
@@ -456,57 +430,44 @@ reverseBtn.addEventListener('click', () => {
 	reversing = true
 	reverse()
 })
-
 playBtn.addEventListener('click', () => {
 	playing = true
 	reversing = false
 	play()
 })
-
 pauseBtn.addEventListener('click', () => {
 	playing = false
 	reversing = false
 })
-
 stopBtn.addEventListener('click', () => {
 	stopSimulation()
 })
-
 startBtn.addEventListener('click', () => {
 	start()
 })
-
 nextBtn.addEventListener('click', () => {
 	next()
 })
-
 randomBtn.addEventListener('click', () => {
 	fillRandom()
 })
-
 clearBtn.addEventListener('click', () => {
 	clearBoard()
 })
-
 sizeSlider.addEventListener('change', (e: any) => {
 	const event = e.target
 	changeBoardSize(event.value)
-	if (Number(event.value) >= 20) {
-		changeStylesSlider()
-	}
+	if (Number(event.value) >= 20) changeStylesSlider()
 })
-
 range.addEventListener('input', () => {
 	setBubble(range, bubble)
 })
-
 up.addEventListener('click', () => {
 	if (sideLengthCells + 1 <= sliderMax) {
 		sideLengthCells++
 		hoverEffect()
 	}
 })
-
 down.addEventListener('click', () => {
 	if (sideLengthCells - 1 >= sliderMax) {
 		sideLengthCells--
