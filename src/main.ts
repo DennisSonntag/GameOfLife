@@ -1,19 +1,20 @@
 import './style.css'
 import './slider.css'
 
-const genTitle = document.getElementById('genTitle') as HTMLElement
-const drawBoard = document.getElementById('board') as HTMLElement
-const sizeSlider = document.getElementById('range') as HTMLElement
-
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
 
+const genTitle = document.getElementById('genTitle') as HTMLElement
+const drawBoard = document.getElementById('board') as HTMLElement
+const sizeSlider = document.getElementById('range') as HTMLElement
 const randomBtn = document.getElementById('fillRandom') as HTMLElement
 const clearBtn = document.getElementById('clear') as HTMLElement
 const startBtn = document.getElementById('start') as HTMLElement
 const colorPicker = <HTMLInputElement>document.getElementById('color')
 
 const startingElements = [randomBtn, clearBtn, startBtn, colorPicker]
+
+
 const previousBtn = document.getElementById('prev') as HTMLElement
 const resetBtn = document.getElementById('reset') as HTMLElement
 const nextBtn = document.getElementById('next') as HTMLElement
@@ -21,13 +22,12 @@ const playBtn = document.getElementById('play') as HTMLElement
 const reverseBtn = document.getElementById('reverse') as HTMLElement
 const pauseBtn = document.getElementById('pause') as HTMLElement
 const stopBtn = document.getElementById('stop') as HTMLElement
+
 const secondElements = [previousBtn, resetBtn, nextBtn, playBtn, reverseBtn, pauseBtn, stopBtn, genTitle]
 
 const stopMsg = document.getElementById('stopMsg') as HTMLElement
-
 const up = document.getElementById('up') as HTMLElement
 const down = document.getElementById('down') as HTMLElement
-
 const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
@@ -60,11 +60,13 @@ const boardColor = makeBoardArray(sideLengthCells)
 const hslString = (hue: number) => {
 	return [`hsl(${hue}, 100%, 50%)`, hue]
 }
+
 const getRowCol = (index: number) => {
 	const row = Math.floor(index / sideLengthCells)
 	const col = index % sideLengthCells
 	return [row, col]
 }
+
 const changeValueAtIndex = (index: number | string, matrix: number[][], value: number) => {
 	index = Number(index)
 	const row = Math.floor(index / sideLengthCells)
@@ -100,7 +102,6 @@ const changeStyleCanvas = (gap: string, borderRadius: string, display1: string, 
 	drawBoard.style.gap = gap
 	;(document.querySelectorAll('.place') as NodeListOf<HTMLDivElement>).forEach(element => {
 		element.style.borderRadius = borderRadius
-
 		element.style.display = display1
 	})
 	canvas.style.display = display2
@@ -113,24 +114,20 @@ const changeStylesFromCanvas = () => {
 const changeStylesToCanvas = () => {
 	changeStyleCanvas('1px', '0%', 'none', 'initial')
 }
+
 const setBubble = (range: HTMLInputElement, bubble: HTMLOutputElement) => {
 	const val = Number(range.value)
 	const min = Number(range.min || 0)
 	const max = Number(range.max || 100)
-
 	const offset = Number(((val - min) * 100) / (max - min))
-
 	bubble.textContent = String(val)
-
 	// yes, 14px is a magic number
 	bubble.style.left = `calc(${offset}% - 14px)`
 }
 
 const hoverEffect = () => {
 	changeBoardSize(sideLengthCells)
-
 	rangeWrap.classList.add('hover')
-
 	let timer
 	if (timer) {
 		// RESET THE TIMER IN EVERY CLICK
@@ -152,14 +149,12 @@ const setGeneration = (value: number) => {
 const stopSimulation = () => {
 	hasStopped = true
 	setGeneration(0)
-
 	board = PreviousGens[0]
 	clearCanvas()
 	changeStylesFromCanvas()
 	startingElements.forEach(element => {
 		element.style.display = 'initial'
 	})
-
 	secondElements.forEach(element => {
 		element.style.display = 'none'
 	})
@@ -177,7 +172,6 @@ const start = () => {
 	startingElements.forEach(element => {
 		element.style.display = 'none'
 	})
-
 	secondElements.forEach(element => {
 		element.style.display = 'initial'
 	})
@@ -186,7 +180,6 @@ const start = () => {
 const checkEqualValueMatrix = (matrix1: number[][], matrix2: number[][], matrix3: number[][]) => {
 	if (matrix1 === undefined && matrix2 === undefined && matrix3 === undefined) return
 	let isEqual = true
-
 	for (let row = 0; row < matrix1.length; row++) {
 		for (let col = 0; col < matrix1[0].length; col++) {
 			if (matrix1[row][col] !== matrix2[row][col] && matrix1[row][col] !== matrix3[row][col]) {
@@ -195,7 +188,6 @@ const checkEqualValueMatrix = (matrix1: number[][], matrix2: number[][], matrix3
 			}
 		}
 	}
-
 	return isEqual
 }
 
@@ -217,7 +209,6 @@ const fillRandom = () => {
 			if (board[row][col] === 1 && div != null) {
 				const [randomColor, hue] = hslString(colorsOfTheRainbow[Math.floor(Math.random() * 6)])
 				boardColor[row][col] = Number(hue)
-
 				div.style.backgroundColor = String(randomColor)
 			} else if (board[row][col] === 0 && div != null) {
 				div.style.backgroundColor = 'white'
@@ -230,11 +221,8 @@ const fillRandom = () => {
 const changeBoardSize = (size: number) => {
 	sideLengthCells = size
 	board = makeBoardArray(sideLengthCells)
-
 	drawBoard.innerHTML = ''
-
 	populate()
-
 	drawBoard.style.gridTemplateRows = `repeat(${sideLengthCells}, 1fr)`
 	drawBoard.style.gridTemplateColumns = `repeat(${sideLengthCells}, 1fr)`
 }
@@ -249,14 +237,11 @@ const renderCanvas = () => {
 	for (let row = 0; row < board.length; row++) {
 		for (let col = 0; col < board[0].length; col++) {
 			const cell = board[row][col]
-
 			const size = drawBoard.clientWidth / sideLengthCells
 			ctx.beginPath()
 			ctx.rect(col * size, row * size, size, size)
-
 			let numNeighbours = 0
 			let hue = 0
-
 			for (let i = -1; i < 2; i++) {
 				for (let j = -1; j < 2; j++) {
 					if (i === 0 && j === 0) {
@@ -265,19 +250,16 @@ const renderCanvas = () => {
 					}
 					const x = row + i,
 						y = col + j
-
 					if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
 						numNeighbours += board[x][y]
 						if (board[x][y] === 1) {
 							// get index from row col
 							const location = x * sideLengthCells + y
-
 							hue += getValueFromIndex(location)
 						}
 					}
 				}
 			}
-
 			// console.log(averageHueOfParents);
 			if (generation > 2 && cell === 1 && numNeighbours === 3) {
 				// if the generation is greater than 2 and the the cell is a child
@@ -335,20 +317,16 @@ const prev = () => {
 		board = PreviousGens[PreviousGens.length - 1]
 		setGeneration(generation - 1)
 	}
-
 	PreviousGens.pop()
 	renderCanvas()
-
 	checkForStop()
 }
 
 const next = () => {
 	board = calculateNextGeneration(board)
 	renderCanvas()
-
 	setGeneration(generation + 1)
 	PreviousGens.push(board)
-
 	checkForStop()
 }
 
@@ -382,11 +360,8 @@ const populate = () => {
 			const div = document.createElement('div')
 			div.id = String(count)
 			div.className = 'place'
-
 			// check if place should be black or white
-
 			checkColor(row, col, div)
-
 			div.addEventListener('mouseover', () => {
 				if (!isDragging) return
 				if (drawMode) {
@@ -394,12 +369,10 @@ const populate = () => {
 					bounceAnim(div)
 				} else {
 					changeValueAtIndex(div.id, board, 0)
-
 					bounceAnim(div)
 				}
 				checkColor(row, col, div)
 			})
-
 			div.addEventListener('click', () => {
 				if (drawMode) {
 					changeValueAtIndex(div.id, board, 1)
@@ -418,7 +391,6 @@ const populate = () => {
 
 const calculateNextGeneration = (grid: number[][]) => {
 	const gridCopy = grid.map((arr: number[]) => [...arr])
-
 	for (let row = 0; row < grid.length; row++) {
 		for (let col = 0; col < grid[row].length; col++) {
 			const oldCell = grid[row][col]
@@ -431,13 +403,11 @@ const calculateNextGeneration = (grid: number[][]) => {
 					}
 					const x = row + i,
 						y = col + j
-
 					if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
 						numNeighbours += grid[x][y]
 					}
 				}
 			}
-
 			// rules
 			if (oldCell === 1 && numNeighbours < 2) {
 				gridCopy[row][col] = 0
