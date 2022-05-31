@@ -5,11 +5,12 @@ const genTitle = document.getElementById('genTitle') as HTMLElement
 const drawBoard = document.getElementById('board') as HTMLElement
 const sizeSlider = document.getElementById('range') as HTMLElement
 const randomBtn = document.getElementById('fillRandom') as HTMLElement
+const toggleBW = document.getElementById('toggleBW') as HTMLElement
 const clearBtn = document.getElementById('clear') as HTMLElement
 const startBtn = document.getElementById('start') as HTMLElement
 const colorPicker = document.getElementById('color') as HTMLInputElement
 
-const startingElements = [randomBtn, clearBtn, startBtn, colorPicker]
+const startingElements = [toggleBW, randomBtn, clearBtn, startBtn, colorPicker]
 
 const previousBtn = document.getElementById('prev') as HTMLElement
 const resetBtn = document.getElementById('reset') as HTMLElement
@@ -28,6 +29,8 @@ const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
 
+const arrayAllEqual = (arr: number[]) => arr.every(val => val === arr[0])
+
 class Canvas {
 	static canvas = document.querySelector('canvas') as HTMLCanvasElement
 	static ctx = Canvas.canvas.getContext('2d') as CanvasRenderingContext2D
@@ -40,7 +43,9 @@ class Canvas {
 				Canvas.ctx.beginPath()
 				Canvas.ctx.rect(col * size, row * size, size, size)
 				let numNeighbours = 0
-				let hue = 0
+				let h = 0
+				let s = 0
+				let l = 0
 				for (let i = -1; i < 2; i++) {
 					for (let j = -1; j < 2; j++) {
 						// skip if the cell selected is the middle
@@ -55,11 +60,12 @@ class Canvas {
 								// hue += getValueFromIndex(location)
 								const place = document.getElementById(String(location)) as HTMLDivElement
 								const raw = place.style.backgroundColor
-
 								if (String(raw) !== undefined) {
-									const [value] = RGBToHSL(String(raw))
+									const [hr, sr, lr] = RGBToHSL(String(raw))
 									// console.log(value)
-									hue += value
+									h += hr
+									s += sr
+									l += lr
 								}
 							}
 						}
@@ -67,9 +73,18 @@ class Canvas {
 				}
 				// if the generation is greater than 2 and the the cell is a child
 				// average hue of parents
-				if (generation > 2 && cell === Board.alive && numNeighbours === 3) Canvas.ctx.fillStyle = hslString(hue / numNeighbours)
+				const currentColor = [h, s, l]
+				if (generation > 2 && cell === Board.alive && numNeighbours === 3)
+					if (arrayAllEqual(currentColor)) {
+						Canvas.ctx.fillStyle = hslString(h / numNeighbours, 100, 50)
+					} else {
+						Canvas.ctx.fillStyle = hslString(h / numNeighbours, s / numNeighbours, l / numNeighbours)
+					}
 				// use default color when its the first 2 generations
-				else if (generation <= 2 && cell === 1) Canvas.ctx.fillStyle = hslString(getColorValueFromIndex(row * sideLengthCells + col))
+				else if (generation <= 2 && cell === 1) {
+					const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
+					Canvas.ctx.fillStyle = hslString(h, s, l)
+				}
 				// if cell is dead
 				else if (cell === 0) Canvas.ctx.fillStyle = 'white'
 				// default black and white behavior
@@ -139,6 +154,8 @@ class Board extends Calculations {
 
 const sliderMax = Number(sizeSlider.getAttribute('max'))
 
+// false : color; true: black and white
+let blackWhite = false
 let generation = 0
 let sideLengthCells = 8
 let hasReset = false
@@ -154,10 +171,6 @@ let PreviousGens: number[][][] = []
 // let initialBoard = makeBoardArray(sideLengthCells)
 const board = new Board(sideLengthCells)
 
-const hslString = (hue: number) => {
-	return String(`hsl(${hue}, 100%, 50%)`)
-}
-
 const getRowCol = (index: number) => {
 	const row = Math.floor(index / sideLengthCells)
 	const col = index % sideLengthCells
@@ -171,28 +184,32 @@ const changeValueAtIndex = (index: number | string, matrix: number[][], value: n
 	matrix[row][col] = value
 }
 
-const RGBToHSL = (raw: string) => {
-	const rgb = raw
-		.substring(4, raw.length - 1)
+const getRgbDataFromString = (rgb: string) => {
+	return rgb
+		.substring(4, rgb.length - 1)
 		.replace(/ /g, '')
 		.split(',')
 		.map((item: string) => {
 			return parseInt(item)
 		})
+}
 
+const RGBToHSL = (raw: string) => {
+	const rgb = getRgbDataFromString(raw)
 	// console.log(rgb)
 	// console.log(raw)
-	let r = rgb[0]
-	let g = rgb[1]
-	let b = rgb[2]
+	const r = rgb[0] / 255
+	const g = rgb[1] / 255
+	const b = rgb[2] / 255
 
-	r /= 255
-	g /= 255
-	b /= 255
 	const l = Math.max(r, g, b)
 	const s = l - Math.min(r, g, b)
 	const h = s ? (l === r ? (g - b) / s : l === g ? 2 + (b - r) / s : 4 + (r - g) / s) : 0
 	return [60 * h < 0 ? 60 * h + 360 : 60 * h, 100 * (s ? (l <= 0.5 ? s / (2 * l - s) : s / (2 - (2 * l - s))) : 0), (100 * (2 * l - s)) / 2]
+}
+
+const hslString = (h: number, s: number, l: number) => {
+	return String(`hsl(${h}, ${s}%, ${l}%)`)
 }
 
 const changeStylesSliderLarge = () => {
@@ -327,8 +344,13 @@ const fillRandom = () => {
 			const div = document.getElementById(String(count))
 			board.grid[row][col] = Math.round(Math.random())
 			if (board.grid[row][col] === Board.alive && div != null) {
-				const randomColor = hslString(colorsOfTheRainbow[Math.floor(Math.random() * 6)])
-				div.style.backgroundColor = randomColor
+				if (blackWhite) {
+					div.style.backgroundColor = 'black'
+				} else if (!blackWhite) {
+					const hueRandom = colorsOfTheRainbow[Math.floor(Math.random() * 6)]
+					const randomColor = hslString(hueRandom, 100, 50)
+					div.style.backgroundColor = randomColor
+				}
 			} else if (board.grid[row][col] === Board.dead && div != null) div.style.backgroundColor = 'white'
 			count++
 		}
@@ -346,8 +368,7 @@ const changeBoardSize = (size: number) => {
 
 const getColorValueFromIndex = (id: number) => {
 	const raw = document.getElementById(String(id))?.style.backgroundColor
-	const [hue] = RGBToHSL(String(raw))
-	return hue
+	return RGBToHSL(String(raw))
 }
 
 const reset = () => {
@@ -355,6 +376,7 @@ const reset = () => {
 	playing = false
 	drawMode = true
 	isDragging = false
+	hasReset = true
 	setGeneration(0)
 	Canvas.clearCanvas()
 }
@@ -469,6 +491,13 @@ window.addEventListener('mousedown', (e: any) => {
 })
 window.addEventListener('mouseup', () => {
 	isDragging = false
+})
+toggleBW.addEventListener('click', () => {
+	blackWhite = !blackWhite
+	colorPicker.style.display = blackWhite ? 'none' : 'initial'
+	Board.colors.draw = blackWhite ? 'black' : colorPicker.value
+	drawBoard.innerHTML = ''
+	populate()
 })
 colorPicker.addEventListener('input', () => {
 	Board.colors.draw = colorPicker.value
