@@ -1,16 +1,13 @@
 import './style.css'
 import './slider.css'
 
-const canvas = document.querySelector('canvas') as HTMLCanvasElement
-const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-
 const genTitle = document.getElementById('genTitle') as HTMLElement
 const drawBoard = document.getElementById('board') as HTMLElement
 const sizeSlider = document.getElementById('range') as HTMLElement
 const randomBtn = document.getElementById('fillRandom') as HTMLElement
 const clearBtn = document.getElementById('clear') as HTMLElement
 const startBtn = document.getElementById('start') as HTMLElement
-const colorPicker = <HTMLInputElement>document.getElementById('color')
+const colorPicker = document.getElementById('color') as HTMLInputElement
 
 const startingElements = [randomBtn, clearBtn, startBtn, colorPicker]
 
@@ -31,16 +28,120 @@ const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
 
-const colors = {
-	dark: '#15171c',
-	light: 'white',
-	draw: colorPicker.value,
+class Canvas {
+	static canvas = document.querySelector('canvas') as HTMLCanvasElement
+	static ctx = Canvas.canvas.getContext('2d') as CanvasRenderingContext2D
+
+	static renderCanvas = () => {
+		for (let row = 0; row < board.grid.length; row++) {
+			for (let col = 0; col < board.grid[0].length; col++) {
+				const cell = board.grid[row][col]
+				const size = drawBoard.clientWidth / sideLengthCells
+				Canvas.ctx.beginPath()
+				Canvas.ctx.rect(col * size, row * size, size, size)
+				let numNeighbours = 0
+				let hue = 0
+				for (let i = -1; i < 2; i++) {
+					for (let j = -1; j < 2; j++) {
+						// skip if the cell selected is the middle
+						if (i === 0 && j === 0) continue
+						const x = row + i,
+							y = col + j
+						if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
+							numNeighbours += board.grid[x][y]
+							if (board.grid[x][y] === Board.alive) {
+								// get index from row col
+								const location: number = x * sideLengthCells + y
+								// hue += getValueFromIndex(location)
+								const place = document.getElementById(String(location)) as HTMLDivElement
+								const raw = place.style.backgroundColor
+
+								if (String(raw) !== undefined) {
+									const [value] = RGBToHSL(String(raw))
+									// console.log(value)
+									hue += value
+								}
+							}
+						}
+					}
+				}
+				// if the generation is greater than 2 and the the cell is a child
+				// average hue of parents
+				if (generation > 2 && cell === Board.alive && numNeighbours === 3) Canvas.ctx.fillStyle = hslString(hue / numNeighbours)
+				// use default color when its the first 2 generations
+				else if (generation <= 2 && cell === 1) Canvas.ctx.fillStyle = hslString(getColorValueFromIndex(row * sideLengthCells + col))
+				// if cell is dead
+				else if (cell === 0) Canvas.ctx.fillStyle = 'white'
+				// default black and white behavior
+				// ctx.fillStyle = cell ? "black" : "white";
+				Canvas.ctx.fill()
+			}
+		}
+	}
+
+	static clearCanvas = () => {
+		// board = makeBoardArray(sideLengthCells)
+		Canvas.ctx.clearRect(0, 0, Number(Canvas.canvas.width), Number(Canvas.canvas.height))
+		Canvas.renderCanvas()
+	}
 }
+
+class Calculations {
+	static calculateNextGeneration = (grid: number[][]) => {
+		const gridCopy = grid.map((arr: number[]) => [...arr])
+		for (let row = 0; row < grid.length; row++) {
+			for (let col = 0; col < grid[row].length; col++) {
+				const oldCell = grid[row][col]
+				let numNeighbours = 0
+				for (let i = -1; i < 2; i++) {
+					for (let j = -1; j < 2; j++) {
+						// skip if selected cell is the middle
+						if (i === 0 && j === 0) continue
+
+						const x = row + i,
+							y = col + j
+						if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
+							numNeighbours += grid[x][y]
+						}
+					}
+				}
+				// rules
+				if (oldCell === 1 && numNeighbours < 2) gridCopy[row][col] = Board.dead
+				else if (oldCell === 1 && numNeighbours > 3) gridCopy[row][col] = Board.dead
+				else if (oldCell === 0 && numNeighbours === 3) gridCopy[row][col] = Board.alive
+			}
+		}
+		return gridCopy
+	}
+}
+
+class Board extends Calculations {
+	static colors = {
+		dark: '#15171c',
+		light: 'white',
+		draw: colorPicker.value,
+	}
+	static dead = 0
+	static alive = 1
+
+	static makeBoardArray(size: number): number[][] {
+		return new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
+	}
+	grid: number[][]
+
+	constructor(size: number) {
+		super()
+		this.grid = Board.makeBoardArray(size)
+	}
+
+	// Main.makeBoardArray(sideLengthCells)
+}
+
 const sliderMax = Number(sizeSlider.getAttribute('max'))
 
 let generation = 0
 let sideLengthCells = 8
-let hasStopped = false
+let hasReset = false
 let reversing = false
 let playing = false
 // true = draw; false = erase;
@@ -50,11 +151,8 @@ let stopped = false
 // let simulationEnd = false
 let PreviousGens: number[][][] = []
 
-const makeBoardArray = (size: number): number[][] => {
-	return new Array(size).fill(0).map(() => new Array(size).fill(0))
-}
 // let initialBoard = makeBoardArray(sideLengthCells)
-let board = makeBoardArray(sideLengthCells)
+const board = new Board(sideLengthCells)
 
 const hslString = (hue: number) => {
 	return String(`hsl(${hue}, 100%, 50%)`)
@@ -121,7 +219,7 @@ const changeStyleCanvas = (gap: string, borderRadius: string, display1: string, 
 		element.style.borderRadius = borderRadius
 		element.style.display = display1
 	})
-	canvas.style.display = display2
+	Canvas.canvas.style.display = display2
 }
 
 const changeStylesFromCanvas = () => {
@@ -164,10 +262,12 @@ const setGeneration = (value: number) => {
 }
 
 const stopSimulation = () => {
-	hasStopped = true
-	setGeneration(0)
-	board = PreviousGens[0]
-	clearCanvas()
+	// hasStopped = true
+	// setGeneration(0)
+	// board = PreviousGens[0]
+	Canvas.clearCanvas()
+	drawBoard.innerHTML = ''
+	populate()
 	changeStylesFromCanvas()
 	startingElements.forEach(element => {
 		element.style.display = 'initial'
@@ -179,12 +279,12 @@ const stopSimulation = () => {
 }
 
 const start = () => {
-	if (hasStopped) {
-		board = PreviousGens[0]
+	if (hasReset) {
+		board.grid = PreviousGens[0]
 		PreviousGens = []
 	}
-	PreviousGens.push(board)
-	renderCanvas()
+	PreviousGens.push(board.grid)
+	Canvas.renderCanvas()
 	changeStylesToCanvas()
 	startingElements.forEach(element => {
 		element.style.display = 'none'
@@ -210,11 +310,11 @@ const checkEqualValueMatrix = (matrix1: number[][], matrix2: number[][], matrix3
 
 const checkForStop = () => {
 	if (generation <= 3) return
-	if (checkEqualValueMatrix(board, PreviousGens[PreviousGens.length - 2], PreviousGens[PreviousGens.length - 3])) {
+	if (checkEqualValueMatrix(board.grid, PreviousGens[PreviousGens.length - 2], PreviousGens[PreviousGens.length - 3])) {
 		playing = false
 		reversing = false
 		stopped = true
-		hasStopped = true
+		// hasReset = true
 		stopMsg.style.display = 'initial'
 	}
 }
@@ -222,14 +322,14 @@ const checkForStop = () => {
 const fillRandom = () => {
 	const colorsOfTheRainbow = [0, 27, 60, 120, 240, 300]
 	let count = 0
-	for (let row = 0; row < board.length; row++) {
-		for (let col = 0; col < board[0].length; col++) {
+	for (let row = 0; row < board.grid.length; row++) {
+		for (let col = 0; col < board.grid[0].length; col++) {
 			const div = document.getElementById(String(count))
-			board[row][col] = Math.round(Math.random())
-			if (board[row][col] === 1 && div != null) {
+			board.grid[row][col] = Math.round(Math.random())
+			if (board.grid[row][col] === Board.alive && div != null) {
 				const randomColor = hslString(colorsOfTheRainbow[Math.floor(Math.random() * 6)])
 				div.style.backgroundColor = randomColor
-			} else if (board[row][col] === 0 && div != null) div.style.backgroundColor = 'white'
+			} else if (board.grid[row][col] === Board.dead && div != null) div.style.backgroundColor = 'white'
 			count++
 		}
 	}
@@ -237,17 +337,11 @@ const fillRandom = () => {
 
 const changeBoardSize = (size: number) => {
 	sideLengthCells = size
-	board = makeBoardArray(sideLengthCells)
+	board.grid = Board.makeBoardArray(sideLengthCells)
 	drawBoard.innerHTML = ''
 	populate()
 	drawBoard.style.gridTemplateRows = `repeat(${sideLengthCells}, 1fr)`
 	drawBoard.style.gridTemplateColumns = `repeat(${sideLengthCells}, 1fr)`
-}
-
-const clearCanvas = () => {
-	board = makeBoardArray(sideLengthCells)
-	ctx.clearRect(0, 0, Number(canvas.width), Number(canvas.height))
-	renderCanvas()
 }
 
 const getColorValueFromIndex = (id: number) => {
@@ -256,60 +350,13 @@ const getColorValueFromIndex = (id: number) => {
 	return hue
 }
 
-const renderCanvas = () => {
-	for (let row = 0; row < board.length; row++) {
-		for (let col = 0; col < board[0].length; col++) {
-			const cell = board[row][col]
-			const size = drawBoard.clientWidth / sideLengthCells
-			ctx.beginPath()
-			ctx.rect(col * size, row * size, size, size)
-			let numNeighbours = 0
-			let hue = 0
-			for (let i = -1; i < 2; i++) {
-				for (let j = -1; j < 2; j++) {
-					// skip if the cell selected is the middle
-					if (i === 0 && j === 0) continue
-					const x = row + i,
-						y = col + j
-					if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
-						numNeighbours += board[x][y]
-						if (board[x][y] === 1) {
-							// get index from row col
-							const location: number = x * sideLengthCells + y
-							// hue += getValueFromIndex(location)
-							const place = document.getElementById(String(location)) as HTMLDivElement
-							const raw = place.style.backgroundColor
-
-							if (String(raw) !== undefined) {
-								const [value] = RGBToHSL(String(raw))
-								// console.log(value)
-								hue += value
-							}
-						}
-					}
-				}
-			}
-			// if the generation is greater than 2 and the the cell is a child
-			// average hue of parents
-			if (generation > 2 && cell === 1 && numNeighbours === 3) ctx.fillStyle = hslString(hue / numNeighbours)
-			// use default color when its the first 2 generations
-			else if (generation <= 2 && cell === 1) ctx.fillStyle = hslString(getColorValueFromIndex(row * sideLengthCells + col))
-			// if cell is dead
-			else if (cell === 0) ctx.fillStyle = 'white'
-			// default black and white behavior
-			// ctx.fillStyle = cell ? "black" : "white";
-			ctx.fill()
-		}
-	}
-}
-
 const reset = () => {
 	//resting all values to default
 	playing = false
 	drawMode = true
 	isDragging = false
 	setGeneration(0)
-	clearCanvas()
+	Canvas.clearCanvas()
 }
 
 const play = () => {
@@ -331,35 +378,35 @@ const reverse = () => {
 const prev = () => {
 	if (!(Number(PreviousGens.length) >= 0)) return
 	if (PreviousGens.length >= 2 && generation >= 1) {
-		board = PreviousGens[PreviousGens.length - 2]
+		board.grid = PreviousGens[PreviousGens.length - 2]
 		setGeneration(generation - 1)
 	} else if (PreviousGens.length === 1 && generation >= 1) {
-		board = PreviousGens[PreviousGens.length - 1]
+		board.grid = PreviousGens[PreviousGens.length - 1]
 		setGeneration(generation - 1)
 	}
 	PreviousGens.pop()
-	renderCanvas()
+	Canvas.renderCanvas()
 	checkForStop()
 }
 
 const next = () => {
-	board = calculateNextGeneration(board)
-	renderCanvas()
+	board.grid = Board.calculateNextGeneration(board.grid)
+	Canvas.renderCanvas()
 	setGeneration(generation + 1)
-	PreviousGens.push(board)
+	PreviousGens.push(board.grid)
 	checkForStop()
 }
 
 const clearBoard = () => {
-	board = makeBoardArray(sideLengthCells)
+	board.grid = Board.makeBoardArray(sideLengthCells)
 	;(document.querySelectorAll('.place') as NodeListOf<HTMLElement>).forEach(element => {
 		element.style.backgroundColor = 'white'
 	})
 }
 
 const checkColor = (row: number, col: number, div: HTMLDivElement) => {
-	if (board[row][col] === 1) div.style.backgroundColor = colors.draw
-	else if (board[row][col] === 0) div.style.backgroundColor = colors.light
+	if (board.grid[row][col] === Board.alive) div.style.backgroundColor = Board.colors.draw
+	else if (board.grid[row][col] === Board.dead) div.style.backgroundColor = Board.colors.light
 }
 
 const bounceAnim = (div: HTMLDivElement) => {
@@ -371,8 +418,8 @@ const bounceAnim = (div: HTMLDivElement) => {
 
 const populate = () => {
 	let count = 0
-	for (let row = 0; row < board.length; row++) {
-		for (let col = 0; col < board[0].length; col++) {
+	for (let row = 0; row < board.grid.length; row++) {
+		for (let col = 0; col < board.grid[0].length; col++) {
 			// setup element
 			const div = document.createElement('div')
 			div.id = String(count)
@@ -382,20 +429,20 @@ const populate = () => {
 			div.addEventListener('mouseover', () => {
 				if (!isDragging) return
 				if (drawMode) {
-					changeValueAtIndex(div.id, board, 1)
+					changeValueAtIndex(div.id, board.grid, 1)
 					bounceAnim(div)
 				} else {
-					changeValueAtIndex(div.id, board, 0)
+					changeValueAtIndex(div.id, board.grid, 0)
 					bounceAnim(div)
 				}
 				checkColor(row, col, div)
 			})
 			div.addEventListener('click', () => {
 				if (drawMode) {
-					changeValueAtIndex(div.id, board, 1)
+					changeValueAtIndex(div.id, board.grid, 1)
 					bounceAnim(div)
 				} else {
-					changeValueAtIndex(div.id, board, 0)
+					changeValueAtIndex(div.id, board.grid, 0)
 					bounceAnim(div)
 				}
 				checkColor(row, col, div)
@@ -406,36 +453,9 @@ const populate = () => {
 	}
 }
 
-const calculateNextGeneration = (grid: number[][]) => {
-	const gridCopy = grid.map((arr: number[]) => [...arr])
-	for (let row = 0; row < grid.length; row++) {
-		for (let col = 0; col < grid[row].length; col++) {
-			const oldCell = grid[row][col]
-			let numNeighbours = 0
-			for (let i = -1; i < 2; i++) {
-				for (let j = -1; j < 2; j++) {
-					// skip if selected cell is the middle
-					if (i === 0 && j === 0) continue
-
-					const x = row + i,
-						y = col + j
-					if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
-						numNeighbours += grid[x][y]
-					}
-				}
-			}
-			// rules
-			if (oldCell === 1 && numNeighbours < 2) gridCopy[row][col] = 0
-			else if (oldCell === 1 && numNeighbours > 3) gridCopy[row][col] = 0
-			else if (oldCell === 0 && numNeighbours === 3) gridCopy[row][col] = 1
-		}
-	}
-	return gridCopy
-}
-
 window.addEventListener('load', () => {
-	ctx.canvas.width = drawBoard.clientWidth
-	ctx.canvas.height = drawBoard.clientHeight
+	Canvas.ctx.canvas.width = drawBoard.clientWidth
+	Canvas.ctx.canvas.height = drawBoard.clientHeight
 	setBubble(range, bubble)
 	populate()
 	changeBoardSize(sideLengthCells)
@@ -444,19 +464,20 @@ window.addEventListener('mousedown', (e: any) => {
 	const event = e.target
 	if (event.className !== 'place') return
 	const [row, col] = getRowCol(event.id)
-	drawMode = board[row][col] === 0
+	drawMode = board.grid[row][col] === Board.dead
 	isDragging = true
 })
 window.addEventListener('mouseup', () => {
 	isDragging = false
 })
 colorPicker.addEventListener('input', () => {
-	colors.draw = colorPicker.value
+	Board.colors.draw = colorPicker.value
 })
 previousBtn.addEventListener('click', () => {
 	if (generation >= 1) prev()
 })
 resetBtn.addEventListener('click', () => {
+	hasReset = true
 	reset()
 })
 reverseBtn.addEventListener('click', () => {
