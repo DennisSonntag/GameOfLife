@@ -5,12 +5,14 @@ const genTitle = document.getElementById('genTitle') as HTMLElement
 const drawBoard = document.getElementById('board') as HTMLElement
 const sizeSlider = document.getElementById('range') as HTMLElement
 const randomBtn = document.getElementById('fillRandom') as HTMLElement
+const fillColor = document.getElementById('fillColor') as HTMLElement
+const fillBucketBtn = document.getElementById('fillBucket') as HTMLElement
 const toggleBW = document.getElementById('toggleBW') as HTMLElement
 const clearBtn = document.getElementById('clear') as HTMLElement
 const startBtn = document.getElementById('start') as HTMLElement
 const colorPicker = document.getElementById('color') as HTMLInputElement
 
-const startingElements = [toggleBW, randomBtn, clearBtn, startBtn, colorPicker]
+const startingElements = [toggleBW, fillColor, randomBtn, clearBtn, startBtn, colorPicker]
 
 const previousBtn = document.getElementById('prev') as HTMLElement
 const resetBtn = document.getElementById('reset') as HTMLElement
@@ -29,7 +31,20 @@ const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
 
-const arrayAllEqual = (arr: number[]) => arr.every(val => val === arr[0])
+const arrayAllEqual = (arr: number[]) => {
+	let isEqual = true
+
+	const firstEl = arr[0]
+
+	arr.forEach(element => {
+		if (element !== firstEl) {
+			isEqual = false
+			return
+		}
+	})
+
+	return isEqual
+}
 
 class Canvas {
 	static canvas = document.querySelector('canvas') as HTMLCanvasElement
@@ -42,9 +57,11 @@ class Canvas {
 				const size = drawBoard.clientWidth / sideLengthCells
 				Canvas.ctx.beginPath()
 				Canvas.ctx.rect(col * size, row * size, size, size)
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore
 				let numNeighbours = 0
 				let h = 0
-				let s = 0
+				// let s = 0
 				let l = 0
 				for (let i = -1; i < 2; i++) {
 					for (let j = -1; j < 2; j++) {
@@ -53,6 +70,9 @@ class Canvas {
 						const x = row + i,
 							y = col + j
 						if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
+							// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+							// @ts-ignore
+							// eslint-disable-next-line @typescript-eslint/no-unused-vars
 							numNeighbours += board.grid[x][y]
 							if (board.grid[x][y] === Board.alive) {
 								// get index from row col
@@ -61,11 +81,11 @@ class Canvas {
 								const place = document.getElementById(String(location)) as HTMLDivElement
 								const raw = place.style.backgroundColor
 								if (String(raw) !== undefined) {
-									const [hr, sr, lr] = RGBToHSL(String(raw))
+									const hslArr = RGBToHSL(String(raw))
 									// console.log(value)
-									h += hr
-									s += sr
-									l += lr
+									h += hslArr[0]
+									// s += sr
+									l += hslArr[2]
 								}
 							}
 						}
@@ -73,22 +93,48 @@ class Canvas {
 				}
 				// if the generation is greater than 2 and the the cell is a child
 				// average hue of parents
-				const currentColor = [h, s, l]
-				if (generation > 2 && cell === Board.alive && numNeighbours === 3)
-					if (arrayAllEqual(currentColor)) {
-						Canvas.ctx.fillStyle = hslString(h / numNeighbours, 100, 50)
-					} else {
-						Canvas.ctx.fillStyle = hslString(h / numNeighbours, s / numNeighbours, l / numNeighbours)
+				const place = document.getElementById(String(row * sideLengthCells + col)) as HTMLDivElement
+				const raw = place.style.backgroundColor
+				const currentRgb = getRgbDataFromString(raw)
+				// const averageColor = [h, s, l]
+				if (cell === Board.alive) {
+					if (generation <= 1) {
+						const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
+						Canvas.ctx.fillStyle = hslString(h, s, l)
+					} else if (generation > 1) {
+						// grayscale
+						if (arrayAllEqual(currentRgb)) {
+							console.log('its grayscale')
+							Canvas.ctx.fillStyle = hslString(0, 0, l)
+						} else {
+							Canvas.ctx.fillStyle = hslString(h, 100, 50)
+						}
 					}
-				// use default color when its the first 2 generations
-				else if (generation <= 2 && cell === 1) {
-					const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
-					Canvas.ctx.fillStyle = hslString(h, s, l)
+
+					// else if (generation > 1) {
+					// 	Canvas.ctx.fillStyle = Board.colors.draw
+					// }
+				} else if (cell === Board.dead) {
+					Canvas.ctx.fillStyle = 'white'
 				}
-				// if cell is dead
-				else if (cell === 0) Canvas.ctx.fillStyle = 'white'
-				// default black and white behavior
-				// ctx.fillStyle = cell ? "black" : "white";
+
+				// if (arrayAllEqual(currentColor) && cell === Board.alive) {
+				// 	console.log('its grayscale')
+				// 	Canvas.ctx.fillStyle = hslString(0, 0, l)
+				// }
+				// if (generation > 2 && cell === Board.alive && numNeighbours === 3) {
+				// 	Canvas.ctx.fillStyle = hslString((h / numNeighbours) % 360, (s / numNeighbours) % 360, (l / numNeighbours) % 360)
+				// }
+				// // use default color when its the first 2 generations
+				// else if (generation <= 2 && cell === 1) {
+				// 	const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
+				// 	Canvas.ctx.fillStyle = hslString(h, s, l)
+				// }
+				// // if cell is dead
+				// else if (cell === 0) Canvas.ctx.fillStyle = 'white'
+
+				// // default black and white behavior
+				// Canvas.ctx.fillStyle = cell ? 'black' : 'white'
 				Canvas.ctx.fill()
 			}
 		}
@@ -167,7 +213,8 @@ let drawMode = true
 let stopped = false
 // let simulationEnd = false
 let PreviousGens: number[][][] = []
-
+let fillBucketActive = false
+let fillBucketInfo: number
 // let initialBoard = makeBoardArray(sideLengthCells)
 const board = new Board(sideLengthCells)
 
@@ -342,16 +389,46 @@ const fillRandom = () => {
 	for (let row = 0; row < board.grid.length; row++) {
 		for (let col = 0; col < board.grid[0].length; col++) {
 			const div = document.getElementById(String(count))
+			// randomly making board cell dead or alive
 			board.grid[row][col] = Math.round(Math.random())
-			if (board.grid[row][col] === Board.alive && div != null) {
+			if (board.grid[row][col] === Board.alive && div !== null) {
 				if (blackWhite) {
-					div.style.backgroundColor = 'black'
+					div.style.backgroundColor = hslString(0, 0, 0)
 				} else if (!blackWhite) {
 					const hueRandom = colorsOfTheRainbow[Math.floor(Math.random() * 6)]
-					const randomColor = hslString(hueRandom, 100, 50)
-					div.style.backgroundColor = randomColor
+					div.style.backgroundColor = hslString(hueRandom, 100, 50)
 				}
-			} else if (board.grid[row][col] === Board.dead && div != null) div.style.backgroundColor = 'white'
+			} else if (board.grid[row][col] === Board.dead && div !== null) div.style.backgroundColor = 'white'
+			count++
+		}
+	}
+}
+
+const fillBoard = () => {
+	let count = 0
+	for (let row = 0; row < board.grid.length; row++) {
+		for (let col = 0; col < board.grid[0].length; col++) {
+			const div = document.getElementById(String(count)) as HTMLDivElement
+			div.style.backgroundColor = Board.colors.draw
+			board.grid[row][col] = Board.alive
+			count++
+		}
+	}
+}
+
+const fillEmpty = () => {
+	let count = 0
+
+	console.log(fillBucketInfo)
+	const element = document.getElementById(String(fillBucketInfo)) as HTMLDivElement
+	const color = element.style.backgroundColor
+	for (let row = 0; row < board.grid.length; row++) {
+		for (let col = 0; col < board.grid[0].length; col++) {
+			if (document.getElementById(String(count))?.style.backgroundColor === color) {
+				const div = document.getElementById(String(count)) as HTMLDivElement
+				div.style.backgroundColor = Board.colors.draw
+				board.grid[row][col] = Board.alive
+			}
 			count++
 		}
 	}
@@ -461,7 +538,10 @@ const populate = () => {
 			})
 			div.addEventListener('click', () => {
 				if (drawMode) {
-					changeValueAtIndex(div.id, board.grid, 1)
+					// TODO : fix click deletes this
+					if (fillBucketActive === false) {
+						changeValueAtIndex(div.id, board.grid, 1)
+					}
 					bounceAnim(div)
 				} else {
 					changeValueAtIndex(div.id, board.grid, 0)
@@ -484,16 +564,25 @@ window.addEventListener('load', () => {
 })
 window.addEventListener('mousedown', (e: any) => {
 	const event = e.target
+	fillBucketInfo = event.id
 	if (event.className !== 'place') return
 	const [row, col] = getRowCol(event.id)
+
 	drawMode = board.grid[row][col] === Board.dead
 	isDragging = true
+
+	if (fillBucketActive) {
+		fillEmpty()
+		fillBucketActive = false
+	}
 })
 window.addEventListener('mouseup', () => {
 	isDragging = false
 })
 toggleBW.addEventListener('click', () => {
 	blackWhite = !blackWhite
+
+	blackWhite ? startingElements.pop() : startingElements.push(colorPicker)
 	colorPicker.style.display = blackWhite ? 'none' : 'initial'
 	Board.colors.draw = blackWhite ? 'black' : colorPicker.value
 	drawBoard.innerHTML = ''
@@ -538,6 +627,12 @@ nextBtn.addEventListener('click', () => {
 })
 randomBtn.addEventListener('click', () => {
 	fillRandom()
+})
+fillColor.addEventListener('click', () => {
+	fillBoard()
+})
+fillBucketBtn.addEventListener('click', () => {
+	fillBucketActive = true
 })
 clearBtn.addEventListener('click', () => {
 	clearBoard()

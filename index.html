@@ -10,7 +10,7 @@
 	<body>
 		<div id="top">
 			<h1 id="genTitle">Generation : 0</h1>
-			<input type="color" name="" value="#ff0000" id="color" />
+			<input title="color picker" type="color" name="" value="#ff0000" id="color" />
 		</div>
 		<div id="left">
 			<div id="sliderContainer">
@@ -26,7 +26,7 @@
 					/>
 				</svg>
 				<div id="rangeWrap">
-					<input id="range" type="range" min="3" max="100" value="8" />
+					<input title="size slider" id="range" type="range" min="3" max="100" value="8" />
 					<output id="bubble"></output>
 				</div>
 			</div>
@@ -38,6 +38,8 @@
 		</div>
 		<div id="right">
 			<button type="button" class="controls" id="toggleBW"><p>Toggle B/W</p></button>
+			<button type="button" class="controls" id="fillBucket"><p>Fill Bucket</p></button>
+			<button type="button" class="controls" id="fillColor"><p>Fill Color</p></button>
 			<button type="button" class="controls" id="fillRandom"><p>Fill Random</p></button>
 			<button type="button" class="controls" id="clear"><p>Clear Board</p></button>
 			<button type="button" class="controls" id="start"><p>Start</p></button>
