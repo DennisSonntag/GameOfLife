@@ -33,19 +33,15 @@ const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
 
 const arrayAllEqual = (arr: number[]) => {
 	let isEqual = true
-
 	const firstEl = arr[0]
-
 	arr.forEach(element => {
 		if (element !== firstEl) {
 			isEqual = false
 			return
 		}
 	})
-
 	return isEqual
 }
-
 class Canvas {
 	static canvas = document.querySelector('canvas') as HTMLCanvasElement
 	static ctx = Canvas.canvas.getContext('2d') as CanvasRenderingContext2D
@@ -103,37 +99,11 @@ class Canvas {
 						Canvas.ctx.fillStyle = hslString(h, s, l)
 					} else if (generation > 1) {
 						// grayscale
-						if (arrayAllEqual(currentRgb)) {
-							console.log('its grayscale')
-							Canvas.ctx.fillStyle = hslString(0, 0, l)
-						} else {
-							Canvas.ctx.fillStyle = hslString(h, 100, 50)
-						}
+						if (arrayAllEqual(currentRgb)) Canvas.ctx.fillStyle = hslString(0, 0, l)
+						else Canvas.ctx.fillStyle = hslString(h, 100, 50)
 					}
-
-					// else if (generation > 1) {
-					// 	Canvas.ctx.fillStyle = Board.colors.draw
-					// }
-				} else if (cell === Board.dead) {
-					Canvas.ctx.fillStyle = 'white'
-				}
-
-				// if (arrayAllEqual(currentColor) && cell === Board.alive) {
-				// 	console.log('its grayscale')
-				// 	Canvas.ctx.fillStyle = hslString(0, 0, l)
-				// }
-				// if (generation > 2 && cell === Board.alive && numNeighbours === 3) {
-				// 	Canvas.ctx.fillStyle = hslString((h / numNeighbours) % 360, (s / numNeighbours) % 360, (l / numNeighbours) % 360)
-				// }
-				// // use default color when its the first 2 generations
-				// else if (generation <= 2 && cell === 1) {
-				// 	const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
-				// 	Canvas.ctx.fillStyle = hslString(h, s, l)
-				// }
-				// // if cell is dead
-				// else if (cell === 0) Canvas.ctx.fillStyle = 'white'
-
-				// // default black and white behavior
+				} else if (cell === Board.dead) Canvas.ctx.fillStyle = 'white'
+				//default black and white behavior
 				// Canvas.ctx.fillStyle = cell ? 'black' : 'white'
 				Canvas.ctx.fill()
 			}
@@ -158,7 +128,6 @@ class Calculations {
 					for (let j = -1; j < 2; j++) {
 						// skip if selected cell is the middle
 						if (i === 0 && j === 0) continue
-
 						const x = row + i,
 							y = col + j
 						if (x >= 0 && y >= 0 && x < sideLengthCells && y < sideLengthCells) {
@@ -184,18 +153,14 @@ class Board extends Calculations {
 	}
 	static dead = 0
 	static alive = 1
-
 	static makeBoardArray(size: number): number[][] {
 		return new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
 	}
 	grid: number[][]
-
 	constructor(size: number) {
 		super()
 		this.grid = Board.makeBoardArray(size)
 	}
-
-	// Main.makeBoardArray(sideLengthCells)
 }
 
 const sliderMax = Number(sizeSlider.getAttribute('max'))
@@ -211,11 +176,9 @@ let playing = false
 let isDragging = false
 let drawMode = true
 let stopped = false
-// let simulationEnd = false
 let PreviousGens: number[][][] = []
 let fillBucketActive = false
 let fillBucketInfo: number
-// let initialBoard = makeBoardArray(sideLengthCells)
 const board = new Board(sideLengthCells)
 
 const getRowCol = (index: number) => {
@@ -243,12 +206,9 @@ const getRgbDataFromString = (rgb: string) => {
 
 const RGBToHSL = (raw: string) => {
 	const rgb = getRgbDataFromString(raw)
-	// console.log(rgb)
-	// console.log(raw)
 	const r = rgb[0] / 255
 	const g = rgb[1] / 255
 	const b = rgb[2] / 255
-
 	const l = Math.max(r, g, b)
 	const s = l - Math.min(r, g, b)
 	const h = s ? (l === r ? (g - b) / s : l === g ? 2 + (b - r) / s : 4 + (r - g) / s) : 0
@@ -326,9 +286,6 @@ const setGeneration = (value: number) => {
 }
 
 const stopSimulation = () => {
-	// hasStopped = true
-	// setGeneration(0)
-	// board = PreviousGens[0]
 	Canvas.clearCanvas()
 	drawBoard.innerHTML = ''
 	populate()
@@ -378,7 +335,6 @@ const checkForStop = () => {
 		playing = false
 		reversing = false
 		stopped = true
-		// hasReset = true
 		stopMsg.style.display = 'initial'
 	}
 }
@@ -392,12 +348,8 @@ const fillRandom = () => {
 			// randomly making board cell dead or alive
 			board.grid[row][col] = Math.round(Math.random())
 			if (board.grid[row][col] === Board.alive && div !== null) {
-				if (blackWhite) {
-					div.style.backgroundColor = hslString(0, 0, 0)
-				} else if (!blackWhite) {
-					const hueRandom = colorsOfTheRainbow[Math.floor(Math.random() * 6)]
-					div.style.backgroundColor = hslString(hueRandom, 100, 50)
-				}
+				if (blackWhite) div.style.backgroundColor = hslString(0, 0, 0)
+				else if (!blackWhite) div.style.backgroundColor = hslString(colorsOfTheRainbow[Math.floor(Math.random() * 6)], 100, 50)
 			} else if (board.grid[row][col] === Board.dead && div !== null) div.style.backgroundColor = 'white'
 			count++
 		}
@@ -418,8 +370,6 @@ const fillBoard = () => {
 
 const fillEmpty = () => {
 	let count = 0
-
-	console.log(fillBucketInfo)
 	const element = document.getElementById(String(fillBucketInfo)) as HTMLDivElement
 	const color = element.style.backgroundColor
 	for (let row = 0; row < board.grid.length; row++) {
@@ -562,42 +512,46 @@ window.addEventListener('load', () => {
 	populate()
 	changeBoardSize(sideLengthCells)
 })
+
 window.addEventListener('mousedown', (e: any) => {
 	const event = e.target
 	fillBucketInfo = event.id
 	if (event.className !== 'place') return
 	const [row, col] = getRowCol(event.id)
-
 	drawMode = board.grid[row][col] === Board.dead
 	isDragging = true
-
 	if (fillBucketActive) {
 		fillEmpty()
 		fillBucketActive = false
 	}
 })
+
 window.addEventListener('mouseup', () => {
 	isDragging = false
 })
+
 toggleBW.addEventListener('click', () => {
 	blackWhite = !blackWhite
-
 	blackWhite ? startingElements.pop() : startingElements.push(colorPicker)
 	colorPicker.style.display = blackWhite ? 'none' : 'initial'
 	Board.colors.draw = blackWhite ? 'black' : colorPicker.value
 	drawBoard.innerHTML = ''
 	populate()
 })
+
 colorPicker.addEventListener('input', () => {
 	Board.colors.draw = colorPicker.value
 })
+
 previousBtn.addEventListener('click', () => {
 	if (generation >= 1) prev()
 })
+
 resetBtn.addEventListener('click', () => {
 	hasReset = true
 	reset()
 })
+
 reverseBtn.addEventListener('click', () => {
 	if (generation >= 1) {
 		playing = false
@@ -605,6 +559,7 @@ reverseBtn.addEventListener('click', () => {
 		reverse()
 	}
 })
+
 playBtn.addEventListener('click', () => {
 	if (!stopped) {
 		playing = true
@@ -612,46 +567,44 @@ playBtn.addEventListener('click', () => {
 		play()
 	}
 })
+
 pauseBtn.addEventListener('click', () => {
 	playing = false
 	reversing = false
 })
-stopBtn.addEventListener('click', () => {
-	stopSimulation()
-})
-startBtn.addEventListener('click', () => {
-	start()
-})
+
+stopBtn.addEventListener('click', () => stopSimulation())
+
+startBtn.addEventListener('click', () => start())
+
 nextBtn.addEventListener('click', () => {
 	if (!stopped) next()
 })
-randomBtn.addEventListener('click', () => {
-	fillRandom()
-})
-fillColor.addEventListener('click', () => {
-	fillBoard()
-})
-fillBucketBtn.addEventListener('click', () => {
-	fillBucketActive = true
-})
-clearBtn.addEventListener('click', () => {
-	clearBoard()
-})
+
+randomBtn.addEventListener('click', () => fillRandom())
+
+fillColor.addEventListener('click', () => fillBoard())
+
+fillBucketBtn.addEventListener('click', () => (fillBucketActive = true))
+
+clearBtn.addEventListener('click', () => clearBoard())
+
 sizeSlider.addEventListener('change', (e: any) => {
 	const event = e.target
 	changeBoardSize(Number(event.value))
 	if (Number(event.value) >= 20) changeStylesSliderLarge()
 	if (Number(event.value) <= 20) changeStylesSliderSmall()
 })
-range.addEventListener('input', () => {
-	setBubble(range, bubble)
-})
+
+range.addEventListener('input', () => setBubble(range, bubble))
+
 up.addEventListener('click', () => {
 	if (sideLengthCells + 1 <= sliderMax) {
 		sideLengthCells++
 		hoverEffect()
 	}
 })
+
 down.addEventListener('click', () => {
 	if (sideLengthCells - 1 >= sliderMax) {
 		sideLengthCells--
