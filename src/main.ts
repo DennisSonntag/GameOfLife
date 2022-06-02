@@ -150,7 +150,6 @@ class Board extends Calculations {
 	static dead = 0
 	static alive = 1
 	static makeBoardArray = (size: number): number[][] => new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
-
 	grid: number[][]
 	constructor(size: number) {
 		super()
@@ -164,17 +163,95 @@ const sliderMax = Number(sizeSlider.getAttribute('max'))
 let blackWhite = false
 let generation = 0
 let sideLengthCells = 8
-let hasReset = false
+// let hasReset = false
 let reversing = false
 let playing = false
 // true = draw; false = erase;
 let isDragging = false
 let drawMode = true
 let stopped = false
-let PreviousGens: number[][][] = []
+const PreviousGens: number[][][] = []
 let fillBucketActive = false
 let fillBucketInfo: number
 const board = new Board(sideLengthCells)
+
+// ------Pan and zoom section----------------
+
+const centerDiv = document.querySelector('#center') as HTMLDivElement
+const divBoard = document.querySelector('#board') as HTMLDivElement
+const centerDivSize = centerDiv.getBoundingClientRect()
+
+let panningAllowed = false
+let zoomFactor = 1
+
+const translate = { scale: zoomFactor, translateX: 0, translateY: 0 }
+const initialContentsPos = { x: 0, y: 0 }
+// const initialZoomPos = { x: 0, y: 0 }
+const pinnedMousePosition = { x: 0, y: 0 }
+const mousePosition = { x: 0, y: 0 }
+
+const mousedown = (e: any) => {
+	if (e.button !== 1) return
+	initialContentsPos.x = translate.translateX
+	initialContentsPos.y = translate.translateY
+	pinnedMousePosition.x = e.clientX
+	pinnedMousePosition.y = e.clientY
+	panningAllowed = true
+}
+
+const mousemove = (event: any) => {
+	mousePosition.x = event.clientX
+	mousePosition.y = event.clientY
+	if (panningAllowed) {
+		const diffX = mousePosition.x - pinnedMousePosition.x
+		const diffY = mousePosition.y - pinnedMousePosition.y
+		translate.translateX = initialContentsPos.x + diffX
+		translate.translateY = initialContentsPos.y + diffY
+	}
+	update()
+}
+
+const mouseup = () => {
+	panningAllowed = false
+}
+
+const zoom = (event: any) => {
+	// Determine before anything else. Otherwise weird jumping.
+	if (zoomFactor + event.deltaY / 5000 > 3 || zoomFactor + event.deltaY / 5000 < 0.4) {
+		return
+	}
+
+	const oldZoomFactor = zoomFactor
+	zoomFactor += event.deltaY / 5000
+
+	mousePosition.x = event.clientX - centerDivSize.x
+	mousePosition.y = event.clientY - centerDivSize.y
+
+	// Calculations
+	translate.scale = zoomFactor
+
+	const contentMousePosX = mousePosition.x - translate.translateX
+	const contentMousePosY = mousePosition.y - translate.translateY
+	const x = mousePosition.x - contentMousePosX * (zoomFactor / oldZoomFactor)
+	const y = mousePosition.y - contentMousePosY * (zoomFactor / oldZoomFactor)
+
+	translate.translateX = x
+	translate.translateY = y
+
+	update()
+}
+
+const update = () => {
+	const matrix = `matrix(${translate.scale},0,0,${translate.scale},${translate.translateX},${translate.translateY})`
+	divBoard.style.transform = matrix
+}
+
+centerDiv.addEventListener('wheel', zoom)
+centerDiv.addEventListener('mousedown', mousedown)
+centerDiv.addEventListener('mousemove', mousemove)
+centerDiv.addEventListener('mouseup', mouseup)
+
+// -----------------------------------
 
 const getRowCol = (index: number) => {
 	const row = Math.floor(index / sideLengthCells)
@@ -278,6 +355,8 @@ const stopSimulation = () => {
 	drawBoard.innerHTML = ''
 	populate()
 	changeStylesFromCanvas()
+	if (sideLengthCells >= 20) changeStylesSliderLarge()
+	if (sideLengthCells <= 20) changeStylesSliderSmall()
 	startingElements.forEach(element => {
 		element.style.display = 'initial'
 	})
@@ -288,10 +367,10 @@ const stopSimulation = () => {
 }
 
 const start = () => {
-	if (hasReset) {
-		board.grid = PreviousGens[0]
-		PreviousGens = []
-	}
+	// if (hasReset) {
+	// 	board.grid = PreviousGens[0]
+	// 	PreviousGens = []
+	// }
 	PreviousGens.push(board.grid)
 	Canvas.renderCanvas()
 	changeStylesToCanvas()
@@ -388,7 +467,7 @@ const reset = () => {
 	isDragging = false
 	playing = false
 	drawMode = true
-	hasReset = true
+	// hasReset = true
 	setGeneration(0)
 	Canvas.clearCanvas()
 }
@@ -397,7 +476,7 @@ const play = () => {
 	const gameLoop = setTimeout(() => {
 		next()
 		requestAnimationFrame(play)
-	}, 100)
+	}, 50)
 	if (!playing || reversing) clearTimeout(gameLoop)
 }
 
@@ -405,11 +484,13 @@ const reverse = () => {
 	const reverseLoop = setTimeout(() => {
 		prev()
 		requestAnimationFrame(reverse)
-	}, 100)
+	}, 50)
 	if (!reversing || playing) clearTimeout(reverseLoop)
 }
 
 const prev = () => {
+	stopMsg.style.display = 'none'
+	stopped = false
 	if (!(Number(PreviousGens.length) >= 0)) return
 	if (PreviousGens.length >= 2 && generation >= 1) {
 		board.grid = PreviousGens[PreviousGens.length - 2]
@@ -471,12 +552,11 @@ const populate = () => {
 				}
 				checkColor(row, col, div)
 			})
-			div.addEventListener('click', () => {
+			div.addEventListener('click', e => {
 				if (drawMode) {
-					// TODO : fix click deletes this
-					if (fillBucketActive === false) {
-						changeValueAtIndex(div.id, board.grid, 1)
-					}
+					if (e.button !== 0) return
+					changeValueAtIndex(div.id, board.grid, 1)
+
 					bounceAnim(div)
 				} else {
 					changeValueAtIndex(div.id, board.grid, 0)
@@ -504,16 +584,16 @@ window.addEventListener('mousedown', (e: any) => {
 	if (event.className !== 'place') return
 	const [row, col] = getRowCol(event.id)
 	drawMode = board.grid[row][col] === Board.dead
-	isDragging = true
-	if (fillBucketActive) {
+	if (e.button === 0) {
+		isDragging = true
+	}
+	if (fillBucketActive && e.button === 0) {
 		fillEmpty()
 		fillBucketActive = false
 	}
 })
 
-window.addEventListener('mouseup', () => {
-	isDragging = false
-})
+window.addEventListener('mouseup', () => (isDragging = false))
 
 toggleBW.addEventListener('click', () => {
 	blackWhite = !blackWhite
@@ -524,18 +604,14 @@ toggleBW.addEventListener('click', () => {
 	populate()
 })
 
-colorPicker.addEventListener('input', () => {
-	Board.colors.draw = colorPicker.value
-})
+colorPicker.addEventListener('input', () => (Board.colors.draw = colorPicker.value))
 
 previousBtn.addEventListener('click', () => {
 	if (generation >= 1) prev()
 })
 
-resetBtn.addEventListener('click', () => {
-	hasReset = true
-	reset()
-})
+// hasReset = true
+resetBtn.addEventListener('click', () => reset())
 
 reverseBtn.addEventListener('click', () => {
 	if (generation >= 1) {
@@ -560,7 +636,10 @@ pauseBtn.addEventListener('click', () => {
 
 stopBtn.addEventListener('click', () => stopSimulation())
 
-startBtn.addEventListener('click', () => start())
+startBtn.addEventListener('click', () => {
+	stopped = false
+	start()
+})
 
 nextBtn.addEventListener('click', () => {
 	if (!stopped) next()
