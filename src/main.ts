@@ -99,15 +99,12 @@ class Canvas {
 						else Canvas.ctx.fillStyle = hslString(h, 100, 50)
 					}
 				} else if (cell === Board.dead) Canvas.ctx.fillStyle = 'white'
-				//default black and white behavior
-				// Canvas.ctx.fillStyle = cell ? 'black' : 'white'
 				Canvas.ctx.fill()
 			}
 		}
 	}
 
 	static clearCanvas = () => {
-		// board = makeBoardArray(sideLengthCells)
 		Canvas.ctx.clearRect(0, 0, Number(Canvas.canvas.width), Number(Canvas.canvas.height))
 		Canvas.renderCanvas()
 	}
@@ -186,7 +183,6 @@ let zoomFactor = 1
 
 const translate = { scale: zoomFactor, translateX: 0, translateY: 0 }
 const initialContentsPos = { x: 0, y: 0 }
-// const initialZoomPos = { x: 0, y: 0 }
 const pinnedMousePosition = { x: 0, y: 0 }
 const mousePosition = { x: 0, y: 0 }
 
@@ -215,17 +211,17 @@ const mouseup = () => {
 	panningAllowed = false
 }
 
-const zoom = (event: any) => {
+const zoom = (e: any) => {
 	// Determine before anything else. Otherwise weird jumping.
-	if (zoomFactor + event.deltaY / 5000 > 3 || zoomFactor + event.deltaY / 5000 < 0.4) {
+	if (zoomFactor + e.deltaY / 5000 > 3 || zoomFactor + e.deltaY / 5000 < 0.4) {
 		return
 	}
 
 	const oldZoomFactor = zoomFactor
-	zoomFactor += event.deltaY / 5000
+	zoomFactor += e.deltaY / 5000
 
-	mousePosition.x = event.clientX - centerDivSize.x
-	mousePosition.y = event.clientY - centerDivSize.y
+	mousePosition.x = e.clientX - centerDivSize.x
+	mousePosition.y = e.clientY - centerDivSize.y
 
 	// Calculations
 	translate.scale = zoomFactor
@@ -367,10 +363,6 @@ const stopSimulation = () => {
 }
 
 const start = () => {
-	// if (hasReset) {
-	// 	board.grid = PreviousGens[0]
-	// 	PreviousGens = []
-	// }
 	PreviousGens.push(board.grid)
 	Canvas.renderCanvas()
 	changeStylesToCanvas()
@@ -467,7 +459,6 @@ const reset = () => {
 	isDragging = false
 	playing = false
 	drawMode = true
-	// hasReset = true
 	setGeneration(0)
 	Canvas.clearCanvas()
 }
@@ -556,7 +547,6 @@ const populate = () => {
 				if (drawMode) {
 					if (e.button !== 0) return
 					changeValueAtIndex(div.id, board.grid, 1)
-
 					bounceAnim(div)
 				} else {
 					changeValueAtIndex(div.id, board.grid, 0)

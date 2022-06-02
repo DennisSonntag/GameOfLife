@@ -43,6 +43,7 @@ body {
 	position: fixed;
 	width: 80vmin;
 	height: 80vmin;
+	transform-origin: 0 0;
 	border: solid hsl(220, 13%, 15%) 10px;
 	border-radius: 10px;
 	inset: 0;
@@ -66,7 +67,6 @@ canvas {
 
 #board {
 	transform-origin: 0 0;
-	/* display: none; */
 	z-index: 1;
 	grid-area: board;
 	position: absolute;
@@ -194,7 +194,7 @@ canvas {
 	transform: scale(1.1);
 }
 
-.controls p:active{
+.controls p:active {
 	text-shadow: none;
 }
 
