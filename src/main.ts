@@ -45,7 +45,6 @@ const arrayAllEqual = (arr: number[]) => {
 class Canvas {
 	static canvas = document.querySelector('canvas') as HTMLCanvasElement
 	static ctx = Canvas.canvas.getContext('2d') as CanvasRenderingContext2D
-
 	static renderCanvas = () => {
 		for (let row = 0; row < board.grid.length; row++) {
 			for (let col = 0; col < board.grid[0].length; col++) {
@@ -71,14 +70,11 @@ class Canvas {
 							// eslint-disable-next-line @typescript-eslint/no-unused-vars
 							numNeighbours += board.grid[x][y]
 							if (board.grid[x][y] === Board.alive) {
-								// get index from row col
 								const location: number = x * sideLengthCells + y
-								// hue += getValueFromIndex(location)
 								const place = document.getElementById(String(location)) as HTMLDivElement
 								const raw = place.style.backgroundColor
 								if (String(raw) !== undefined) {
 									const hslArr = RGBToHSL(String(raw))
-									// console.log(value)
 									h += hslArr[0]
 									// s += sr
 									l += hslArr[2]
@@ -153,9 +149,8 @@ class Board extends Calculations {
 	}
 	static dead = 0
 	static alive = 1
-	static makeBoardArray(size: number): number[][] {
-		return new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
-	}
+	static makeBoardArray = (size: number): number[][] => new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
+
 	grid: number[][]
 	constructor(size: number) {
 		super()
@@ -194,15 +189,14 @@ const changeValueAtIndex = (index: number | string, matrix: number[][], value: n
 	matrix[row][col] = value
 }
 
-const getRgbDataFromString = (rgb: string) => {
-	return rgb
+const getRgbDataFromString = (rgb: string) =>
+	rgb
 		.substring(4, rgb.length - 1)
 		.replace(/ /g, '')
 		.split(',')
 		.map((item: string) => {
 			return parseInt(item)
 		})
-}
 
 const RGBToHSL = (raw: string) => {
 	const rgb = getRgbDataFromString(raw)
@@ -215,9 +209,7 @@ const RGBToHSL = (raw: string) => {
 	return [60 * h < 0 ? 60 * h + 360 : 60 * h, 100 * (s ? (l <= 0.5 ? s / (2 * l - s) : s / (2 - (2 * l - s))) : 0), (100 * (2 * l - s)) / 2]
 }
 
-const hslString = (h: number, s: number, l: number) => {
-	return String(`hsl(${h}, ${s}%, ${l}%)`)
-}
+const hslString = (h: number, s: number, l: number) => String(`hsl(${h}, ${s}%, ${l}%)`)
 
 const changeStylesSliderLarge = () => {
 	drawBoard.style.transition = 'gap 0ms ease-in-out'
@@ -246,13 +238,9 @@ const changeStyleCanvas = (gap: string, borderRadius: string, display1: string, 
 	Canvas.canvas.style.display = display2
 }
 
-const changeStylesFromCanvas = () => {
-	changeStyleCanvas('3px', '10%', 'initial', 'none')
-}
+const changeStylesFromCanvas = () => changeStyleCanvas('3px', '10%', 'initial', 'none')
 
-const changeStylesToCanvas = () => {
-	changeStyleCanvas('1px', '0%', 'none', 'initial')
-}
+const changeStylesToCanvas = () => changeStyleCanvas('1px', '0%', 'none', 'initial')
 
 const setBubble = (range: HTMLInputElement, bubble: HTMLOutputElement) => {
 	const val = Number(range.value)
@@ -332,10 +320,10 @@ const checkEqualValueMatrix = (matrix1: number[][], matrix2: number[][], matrix3
 const checkForStop = () => {
 	if (generation <= 3) return
 	if (checkEqualValueMatrix(board.grid, PreviousGens[PreviousGens.length - 2], PreviousGens[PreviousGens.length - 3])) {
-		playing = false
-		reversing = false
-		stopped = true
 		stopMsg.style.display = 'initial'
+		reversing = false
+		playing = false
+		stopped = true
 	}
 }
 
@@ -393,16 +381,13 @@ const changeBoardSize = (size: number) => {
 	drawBoard.style.gridTemplateColumns = `repeat(${sideLengthCells}, 1fr)`
 }
 
-const getColorValueFromIndex = (id: number) => {
-	const raw = document.getElementById(String(id))?.style.backgroundColor
-	return RGBToHSL(String(raw))
-}
+const getColorValueFromIndex = (id: number) => RGBToHSL(String(document.getElementById(String(id))?.style.backgroundColor))
 
 const reset = () => {
 	//resting all values to default
+	isDragging = false
 	playing = false
 	drawMode = true
-	isDragging = false
 	hasReset = true
 	setGeneration(0)
 	Canvas.clearCanvas()
@@ -554,23 +539,23 @@ resetBtn.addEventListener('click', () => {
 
 reverseBtn.addEventListener('click', () => {
 	if (generation >= 1) {
-		playing = false
 		reversing = true
+		playing = false
 		reverse()
 	}
 })
 
 playBtn.addEventListener('click', () => {
 	if (!stopped) {
-		playing = true
 		reversing = false
+		playing = true
 		play()
 	}
 })
 
 pauseBtn.addEventListener('click', () => {
-	playing = false
 	reversing = false
+	playing = false
 })
 
 stopBtn.addEventListener('click', () => stopSimulation())
@@ -590,10 +575,10 @@ fillBucketBtn.addEventListener('click', () => (fillBucketActive = true))
 clearBtn.addEventListener('click', () => clearBoard())
 
 sizeSlider.addEventListener('change', (e: any) => {
-	const event = e.target
-	changeBoardSize(Number(event.value))
-	if (Number(event.value) >= 20) changeStylesSliderLarge()
-	if (Number(event.value) <= 20) changeStylesSliderSmall()
+	const eventValue = Number(e.target.value)
+	changeBoardSize(eventValue)
+	if (eventValue >= 20) changeStylesSliderLarge()
+	if (eventValue <= 20) changeStylesSliderSmall()
 })
 
 range.addEventListener('input', () => setBubble(range, bubble))
