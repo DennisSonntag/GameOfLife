@@ -545,10 +545,11 @@ const populate = () => {
 			})
 			div.addEventListener('click', e => {
 				if (drawMode) {
-					if (e.button !== 0) return
+					if (e.button !== 0 ) return
 					changeValueAtIndex(div.id, board.grid, 1)
 					bounceAnim(div)
 				} else {
+					if(fillBucketActive) return
 					changeValueAtIndex(div.id, board.grid, 0)
 					bounceAnim(div)
 				}
