@@ -6,13 +6,15 @@ const drawBoard = document.getElementById('board') as HTMLElement
 const sizeSlider = document.getElementById('range') as HTMLElement
 const randomBtn = document.getElementById('fillRandom') as HTMLElement
 const fillColor = document.getElementById('fillColor') as HTMLElement
-const fillBucketBtn = document.getElementById('fillBucket') as HTMLElement
-const toggleBW = document.getElementById('toggleBW') as HTMLElement
+const fillBucketBtn = document.getElementById('fillBucket') as HTMLDivElement
+const fillBucketText = document.getElementById('fillBucketText') as HTMLParagraphElement
+const toggleBW = document.getElementById('toggleBW') as HTMLDivElement
+const toggleBWText = document.getElementById('toggleBWText') as HTMLParagraphElement
 const clearBtn = document.getElementById('clear') as HTMLElement
 const startBtn = document.getElementById('start') as HTMLElement
 const colorPicker = document.getElementById('color') as HTMLInputElement
 
-const startingElements = [toggleBW, fillColor, randomBtn, clearBtn, startBtn, colorPicker]
+const startingElements = [toggleBW, fillColor, randomBtn, clearBtn, fillBucketText, startBtn, fillBucketBtn, colorPicker]
 
 const previousBtn = document.getElementById('prev') as HTMLElement
 const resetBtn = document.getElementById('reset') as HTMLElement
@@ -88,7 +90,6 @@ class Canvas {
 				const place = document.getElementById(String(row * sideLengthCells + col)) as HTMLDivElement
 				const raw = place.style.backgroundColor
 				const currentRgb = getRgbDataFromString(raw)
-				// const averageColor = [h, s, l]
 				if (cell === Board.alive) {
 					if (generation <= 1) {
 						const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
@@ -160,9 +161,9 @@ const sliderMax = Number(sizeSlider.getAttribute('max'))
 let blackWhite = false
 let generation = 0
 let sideLengthCells = 8
-// let hasReset = false
 let reversing = false
 let playing = false
+let started = false
 // true = draw; false = erase;
 let isDragging = false
 let drawMode = true
@@ -348,6 +349,7 @@ const setGeneration = (value: number) => {
 
 const stopSimulation = () => {
 	Canvas.clearCanvas()
+	started = false
 	drawBoard.innerHTML = ''
 	populate()
 	changeStylesFromCanvas()
@@ -459,6 +461,7 @@ const reset = () => {
 	isDragging = false
 	playing = false
 	drawMode = true
+	board.grid = Board.makeBoardArray(sideLengthCells)
 	setGeneration(0)
 	Canvas.clearCanvas()
 }
@@ -476,6 +479,7 @@ const reverse = () => {
 		prev()
 		requestAnimationFrame(reverse)
 	}, 50)
+	// speed
 	if (!reversing || playing) clearTimeout(reverseLoop)
 }
 
@@ -492,7 +496,6 @@ const prev = () => {
 	}
 	PreviousGens.pop()
 	Canvas.renderCanvas()
-	checkForStop()
 }
 
 const next = () => {
@@ -545,12 +548,11 @@ const populate = () => {
 			})
 			div.addEventListener('click', e => {
 				if (drawMode) {
-					if (e.button !== 0 ) return
 					changeValueAtIndex(div.id, board.grid, 1)
 					bounceAnim(div)
 				} else {
-					if(fillBucketActive) return
 					changeValueAtIndex(div.id, board.grid, 0)
+
 					bounceAnim(div)
 				}
 				checkColor(row, col, div)
@@ -578,9 +580,10 @@ window.addEventListener('mousedown', (e: any) => {
 	if (e.button === 0) {
 		isDragging = true
 	}
-	if (fillBucketActive && e.button === 0) {
-		fillEmpty()
+	if (fillBucketActive) {
 		fillBucketActive = false
+		fillBucketText.style.color = 'red'
+		fillEmpty()
 	}
 })
 
@@ -588,12 +591,21 @@ window.addEventListener('mouseup', () => (isDragging = false))
 
 toggleBW.addEventListener('click', () => {
 	blackWhite = !blackWhite
+	toggleBWText.innerText = blackWhite ? 'Toggle Color' : 'Toggle B/W'
+
+	if (!blackWhite) {
+		toggleBWText.style.color = 'black'
+		toggleBWText.classList.remove('rainbow')
+	} else if (blackWhite) {
+		toggleBWText.classList.add('rainbow')
+	}
 	blackWhite ? startingElements.pop() : startingElements.push(colorPicker)
 	colorPicker.style.display = blackWhite ? 'none' : 'initial'
 	Board.colors.draw = blackWhite ? 'black' : colorPicker.value
 	drawBoard.innerHTML = ''
 	populate()
 })
+
 
 colorPicker.addEventListener('input', () => (Board.colors.draw = colorPicker.value))
 
@@ -620,6 +632,28 @@ playBtn.addEventListener('click', () => {
 	}
 })
 
+window.addEventListener('keydown', e => {
+	if (e.key === ' ' && started) {
+		if (!playing) {
+			if (!stopped) {
+				reversing = false
+				playing = true
+				play()
+			}
+		} else {
+			reversing = false
+			playing = false
+		}
+	}
+
+	if (e.key === 'ArrowLeft') {
+		prev()
+	}
+	if (e.key === 'ArrowRight') {
+		next()
+	}
+})
+
 pauseBtn.addEventListener('click', () => {
 	reversing = false
 	playing = false
@@ -629,6 +663,7 @@ stopBtn.addEventListener('click', () => stopSimulation())
 
 startBtn.addEventListener('click', () => {
 	stopped = false
+	started = true
 	start()
 })
 
@@ -640,7 +675,11 @@ randomBtn.addEventListener('click', () => fillRandom())
 
 fillColor.addEventListener('click', () => fillBoard())
 
-fillBucketBtn.addEventListener('click', () => (fillBucketActive = true))
+fillBucketBtn.addEventListener('click', () => {
+	fillBucketActive = true
+
+	fillBucketText.style.color = 'green'
+})
 
 clearBtn.addEventListener('click', () => clearBoard())
 
