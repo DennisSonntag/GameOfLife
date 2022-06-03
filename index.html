@@ -56,5 +56,34 @@
 		<div id="bottom">
 			<p id="stopMsg">No Further Changes Will Occur!!!</p>
 		</div>
+		<div id="modalBackground">
+			<div id="settingModal">
+				<p id="settingModalText">Settings</p>
+				<p id="speedTitle">Speed in ms</p>
+				<input type="text" id="speedInput" placeholder="50" />
+				<button type="button" id="addRuleBtn">Add Rule</button>
+				<div class="rule">
+					<div class="left">
+						<p>If</p>
+						<button class="deadAlive">Dead</button>
+						<button class="deadAlive">Alive</button>
+					</div>
+					<div class="middle">
+						<p>and</p>
+						<p>Greater Than</p>
+						<p>Less Than</p>
+						<p>Equal To</p>
+						<input type="text" />
+						<input type="text" />
+						<input type="text" />
+					</div>
+					<div class="right">
+						<p>then</p>
+						<button class="deadAlive">Dead</button>
+						<button class="deadAlive">Alive</button>
+					</div>
+				</div>
+			</div>
+		</div>
 	</body>
 </html>

@@ -26,12 +26,17 @@ const stopBtn = document.getElementById('stop') as HTMLElement
 
 const secondElements = [previousBtn, resetBtn, nextBtn, playBtn, reverseBtn, pauseBtn, stopBtn, genTitle]
 
+const modalBackground = document.getElementById('modalBackground') as HTMLDivElement
+const settingModal = document.getElementById('settingModal') as HTMLDivElement
+const settingModalText = document.getElementById('settingModalText') as HTMLParagraphElement
+
 const stopMsg = document.getElementById('stopMsg') as HTMLElement
 const up = document.getElementById('up') as HTMLElement
 const down = document.getElementById('down') as HTMLElement
 const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
+const deadAliveBtn = document.querySelectorAll('.deadAlive') as NodeListOf<Element>
 
 const arrayAllEqual = (arr: number[]) => {
 	let isEqual = true
@@ -163,6 +168,7 @@ let sideLengthCells = 8
 let blackWhite = false
 // true = draw; false = erase;
 let isDragging = false
+let modalActive = false
 let reversing = false
 let playing = false
 let stopped = false
@@ -559,6 +565,17 @@ window.addEventListener('mousedown', (e: MouseEvent) => {
 
 window.addEventListener('mouseup', () => (isDragging = false))
 
+deadAliveBtn.forEach(element => {
+	element.addEventListener('click', e => {
+		const target = e.target as HTMLButtonElement
+
+		
+		if (target.style.backgroundColor === 'red') {
+			console.log('red')
+		}
+	})
+})
+
 toggleBWBtn.addEventListener('click', () => {
 	blackWhite = !blackWhite
 	toggleBWText.innerText = blackWhite ? 'Toggle Color' : 'Toggle B/W'
@@ -624,6 +641,19 @@ window.addEventListener('keydown', event => {
 	if (event.key === 'ArrowRight') {
 		next()
 	}
+	if (event.key === 'Escape') {
+		modalActive = !modalActive
+		modalBackground.style.display = modalActive ? 'initial' : 'none'
+	}
+})
+
+modalBackground.addEventListener('click', () => {
+	modalActive = !modalActive
+	modalBackground.style.display = modalActive ? 'initial' : 'none'
+})
+
+settingModal.addEventListener('click', e => {
+	e.stopPropagation()
 })
 
 pauseBtn.addEventListener('click', () => {
