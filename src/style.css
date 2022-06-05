@@ -1,31 +1,3 @@
-:root {
-	--primary: hsl(220, 13%, 18%);
-	--secondary: hsl(220, 13%, 28%);
-	--tertiary: hsl(220, 13%, 8%);
-	font-family: 'Roboto', sans-serif;
-	font-size: 62.5%;
-}
-
-* {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
-	-ms-user-select: none;
-	-moz-user-select: none;
-	-webkit-user-drag: none;
-	-webkit-user-select: none;
-	user-select: none;
-}
-
-body {
-	background-color: var(--primary);
-	position: fixed;
-	width: 100vw;
-	height: 100vh;
-	overflow: hidden;
-	display: flex;
-}
-
 @keyframes bounce {
 	100% {
 		transform: scale(1);
@@ -38,7 +10,39 @@ body {
 	}
 }
 
+:root {
+	--primary: hsl(220, 13%, 18%);
+	--secondary: hsl(220, 13%, 28%);
+	--tertiary: hsl(220, 13%, 8%);
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	-ms-user-select: none;
+	-moz-user-select: none;
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+body {
+	background-color: var(--primary);
+	width: 100vw;
+	height: 100vh;
+	font-family: 'Roboto', sans-serif;
+	font-size: 62.5%;
+	overflow: hidden;
+}
+
 #center {
+	box-sizing: content-box;
 	z-index: 0;
 	position: fixed;
 	width: 80vmin;
@@ -47,7 +51,7 @@ body {
 	border: solid hsl(220, 13%, 15%) 10px;
 	border-radius: 10px;
 	inset: 0;
-	background-color: black;
+	background-color: rgb(54, 54, 54);
 	margin: auto;
 	box-shadow: 15px -15px 19px #181b20, -15px 15px 19px #383d48;
 	overflow: hidden;
@@ -60,7 +64,6 @@ canvas {
 	z-index: 100;
 	position: absolute;
 	inset: 0;
-
 	margin: auto;
 	transition: opacity 500ms ease-in-out;
 }
@@ -104,7 +107,7 @@ canvas {
 
 #genTitle {
 	font-size: 4rem;
-	z-index: 100;
+	z-index: 2;
 	width: fit-content;
 	height: fit-content;
 	color: var(--secondary);
@@ -164,14 +167,12 @@ canvas {
 
 .controls {
 	box-shadow: 7px 7px 14px #1b1d23, -7px -7px 14px #353b45;
-
 	font-size: 1.5vw;
 	position: relative;
 	font-weight: bold;
 	white-space: nowrap;
 	color: hsl(220, 13%, 50%);
 	background: linear-gradient(145deg, #2b2f38, #24282f);
-
 	width: 10vw;
 	height: 4vh;
 	margin-block: 5%;
@@ -190,12 +191,12 @@ canvas {
 	margin: auto;
 }
 
-.controls:hover {
-	transform: scale(1.1);
-}
-
 .controls p:active {
 	text-shadow: none;
+}
+
+.controls:hover {
+	transform: scale(1.1);
 }
 
 .controls:active {
@@ -252,10 +253,11 @@ button:focus {
 		rgba(255, 0, 0, 1) 100%
 	);
 	-webkit-background-clip: text;
+	background-clip: text;
 	-webkit-text-fill-color: transparent;
 }
 
-#toggleBW p {
+#toggleBWText {
 	color: black;
 }
 
@@ -296,6 +298,8 @@ input[type='color']::-webkit-color-swatch {
 }
 
 #modalBackground {
+	z-index: 3;
+	color: white;
 	width: 100vw;
 	height: 100vh;
 	top: 0;
@@ -370,17 +374,24 @@ input[type='color']::-webkit-color-swatch {
 	transform: scale(0.9);
 }
 
-.rule {
-	width: 80%;
-	height: 10%;
-	background-color: rgba(0, 0, 0, 0.5);
-	left: 50%;
-	transform: translate(-50%);
+#ruleSection {
 	position: absolute;
-	top: 35%;
-	border-radius: 1000px;
+	width: 80%;
+	height: 65%;
+	bottom: 0;
+	inset-inline: 0;
+	margin-inline: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 5%;
+	overflow-y: auto;
 }
-.left {
+
+.ruleRight {
+	right: 0;
+}
+
+.ruleRightLeft {
 	position: absolute;
 	width: 30%;
 	height: 100%;
@@ -391,38 +402,126 @@ input[type='color']::-webkit-color-swatch {
 	gap: 10%;
 }
 
-.left > p {
+.ruleRightLeft > p {
 	font-size: 2rem;
 	height: fit-content;
 	width: fit-content;
 	position: relative;
 }
-.left button {
-	width: fit-content;
-	height: fit-content;
-	padding: 5%;
+
+.rule {
+	color: hsl(220, 13%, 50%);
+	width: 80%;
+	min-height: 15%;
+	background-color: var(--primary);
+	left: 50%;
+	transform: translate(-50%);
+	position: relative;
+	top: 1rem;
+	border-radius: 1rem;
+}
+
+.deadAlive {
+	background: linear-gradient(145deg, #2b2f38, #24282f);
+	box-shadow: 5px 5px 10px #141619, -5px -5px 10px #3c424f;
+	width: 3rem;
+	height: 1rem;
+	padding: 4%;
 	position: relative;
 	font-size: 1.5rem;
-	background-color: red;
+	background-color: var(--primary);
 	border-radius: 1000px;
 }
-.left button:hover{
+.deadAlive:hover {
 	transform: scale(1.1);
 }
 
-.left button:active{
-	transform: scale(.9);
+.deadAlive:active {
+	background: linear-gradient(145deg, #24282f, #2b2f38);
+	transform: scale(1.05);
 }
 
-.middle {
+.deadAlive p {
+	pointer-events: none;
+	text-shadow: -0px -0px 12px var(--tertiary), 8px 8px 12px rgba(0, 0, 0, 0.08);
+	width: fit-content;
+	height: fit-content;
+	position: absolute;
+	inset: 0;
+	margin: auto;
+}
+
+.deadAlive p:active {
+	text-shadow: none;
+}
+
+.ruleInput {
+	height: 100%;
+	right: 0;
+	top: 0;
+	position: absolute;
+	width: 60%;
+	display: grid;
+	grid-template-rows: repeat(3, 1fr);
+}
+
+.inputSec {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+.inputSec input {
+	width: 30%;
+	right: 15%;
+	inset-block: 0;
+	margin: auto;
+	height: 60%;
+	position: absolute;
+	text-align: center;
+}
+
+.labelWrap {
+	left: 0;
+	width: 45%;
+	height: 100%;
+	position: absolute;
+}
+
+.inputSec label {
+	font-size: 1rem;
+	inset: 0;
+	margin: auto;
+	width: fit-content;
+	height: fit-content;
+	position: absolute;
+}
+
+.ruleMiddle {
 	position: absolute;
 	width: 40%;
 	height: 100%;
 	left: 30%;
-	border-left: solid 2px black;
-	border-right: solid 2px black;
 }
-.right {
+
+.middleLeft {
+	width: 40%;
+	height: 100%;
+	position: absolute;
+	left: 0;
+	display: grid;
+	place-content: center;
+}
+.middleLeft p {
+	font-size: 2rem;
+	left: 10%;
+	text-align: center;
+	height: fit-content;
+	width: fit-content;
+	position: relative;
+}
+
+.ruleRight {
 	position: absolute;
 	width: 30%;
 	height: 100%;

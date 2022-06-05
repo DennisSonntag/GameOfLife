@@ -1,38 +1,40 @@
 import './style.css'
 import './slider.css'
 
-const genTitle = document.getElementById('genTitle') as HTMLElement
-const drawBoard = document.getElementById('board') as HTMLElement
-const sizeSlider = document.getElementById('range') as HTMLElement
-const randomBtn = document.getElementById('fillRandom') as HTMLElement
-const fillColor = document.getElementById('fillColor') as HTMLElement
-const fillBucketBtn = document.getElementById('fillBucket') as HTMLDivElement
+const genTitle = document.getElementById('genTitle') as HTMLHeadingElement
+const drawBoard = document.getElementById('board') as HTMLDivElement
+const sizeSlider = document.getElementById('range') as HTMLInputElement
+const randomBtn = document.getElementById('fillRandom') as HTMLButtonElement
+const fillColor = document.getElementById('fillColor') as HTMLButtonElement
+const fillBucketBtn = document.getElementById('fillBucket') as HTMLButtonElement
 const fillBucketText = document.getElementById('fillBucketText') as HTMLParagraphElement
 const toggleBWBtn = document.getElementById('toggleBW') as HTMLDivElement
 const toggleBWText = document.getElementById('toggleBWText') as HTMLParagraphElement
-const clearBtn = document.getElementById('clear') as HTMLElement
-const startBtn = document.getElementById('start') as HTMLElement
+const clearBtn = document.getElementById('clear') as HTMLButtonElement
+const startBtn = document.getElementById('start') as HTMLButtonElement
 const colorPicker = document.getElementById('color') as HTMLInputElement
 
 const startingElements = [toggleBWBtn, fillColor, randomBtn, clearBtn, fillBucketText, startBtn, fillBucketBtn, colorPicker]
 
-const previousBtn = document.getElementById('prev') as HTMLElement
-const resetBtn = document.getElementById('reset') as HTMLElement
-const nextBtn = document.getElementById('next') as HTMLElement
-const playBtn = document.getElementById('play') as HTMLElement
-const reverseBtn = document.getElementById('reverse') as HTMLElement
-const pauseBtn = document.getElementById('pause') as HTMLElement
-const stopBtn = document.getElementById('stop') as HTMLElement
+const previousBtn = document.getElementById('prev') as HTMLButtonElement
+const resetBtn = document.getElementById('reset') as HTMLButtonElement
+const nextBtn = document.getElementById('next') as HTMLButtonElement
+const playBtn = document.getElementById('play') as HTMLButtonElement
+const reverseBtn = document.getElementById('reverse') as HTMLButtonElement
+const pauseBtn = document.getElementById('pause') as HTMLButtonElement
+const stopBtn = document.getElementById('stop') as HTMLButtonElement
 
 const secondElements = [previousBtn, resetBtn, nextBtn, playBtn, reverseBtn, pauseBtn, stopBtn, genTitle]
 
 const modalBackground = document.getElementById('modalBackground') as HTMLDivElement
-const settingModal = document.getElementById('settingModal') as HTMLDivElement
-const settingModalText = document.getElementById('settingModalText') as HTMLParagraphElement
+const addRuleBtn = document.getElementById('addRuleBtn') as HTMLButtonElement
+const ruleSection = document.getElementById('ruleSection') as HTMLSelectElement
+// const settingModal = document.getElementById('settingModal') as HTMLDivElement
+// const settingModalText = document.getElementById('settingModalText') as HTMLParagraphElement
 
-const stopMsg = document.getElementById('stopMsg') as HTMLElement
-const up = document.getElementById('up') as HTMLElement
-const down = document.getElementById('down') as HTMLElement
+const stopMsg = document.getElementById('stopMsg') as HTMLParagraphElement
+const up = document.getElementById('up') as HTMLElement & SVGElement
+const down = document.getElementById('down') as HTMLElement & SVGElement
 const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
@@ -312,7 +314,7 @@ const setBubble = (range: HTMLInputElement, bubble: HTMLOutputElement) => {
 	const min = Number(range.min || 0)
 	const max = Number(range.max || 100)
 	const offset = Number(((val - min) * 100) / (max - min))
-	bubble.textContent = String(val)
+	bubble.innerText = String(val)
 	// yes, 14px is a magic number
 	bubble.style.left = `calc(${offset}% - 14px)`
 }
@@ -339,9 +341,10 @@ const setGeneration = (value: number) => {
 }
 
 const stopSimulation = () => {
+	stopped = false
+	stopMsg.style.display = 'none'
 	Canvas.clearCanvas()
 	started = false
-
 	populate()
 	changeStylesFromCanvas()
 	if (sideLengthCells >= 20) changeStylesSliderLarge()
@@ -440,12 +443,17 @@ const getColorValueFromIndex = (id: number) => RGBToHSL(String(document.getEleme
 
 const reset = () => {
 	//resting all values to default
+	stopMsg.style.display = 'none'
 	isDragging = false
 	playing = false
 	drawMode = true
 	board.grid = Board.makeBoardArray(sideLengthCells)
 	setGeneration(0)
 	Canvas.clearCanvas()
+}
+const pause = () => {
+	reversing = false
+	playing = false
 }
 
 const play = () => {
@@ -515,17 +523,6 @@ const populate = () => {
 			div.className = 'place'
 			// check if place should be black or white
 			checkColor(row, col, div)
-			div.addEventListener('mouseover', () => {
-				if (!isDragging) return
-				if (drawMode) {
-					changeValueAtIndex(div.id, board.grid, 1)
-					bounceAnim(div)
-				} else {
-					changeValueAtIndex(div.id, board.grid, 0)
-					bounceAnim(div)
-				}
-				checkColor(row, col, div)
-			})
 			div.addEventListener('click', () => {
 				if (drawMode) {
 					changeValueAtIndex(div.id, board.grid, 1)
@@ -547,33 +544,47 @@ window.addEventListener('load', () => {
 	Canvas.ctx.canvas.width = drawBoard.clientWidth
 	Canvas.ctx.canvas.height = drawBoard.clientHeight
 	setBubble(range, bubble)
+
 	populate()
 })
 
-window.addEventListener('mousedown', (e: MouseEvent) => {
-	const event = e.target as HTMLDivElement
-	fillBucketInfo = Number(event.id)
-	if (event.className !== 'place') return
-	const [row, col] = getRowCol(Number(event.id))
+window.addEventListener('mousedown', event => {
+	const target = event.target as HTMLDivElement
+	fillBucketInfo = Number(target.id)
+	if (target.className !== 'place') return
+	const [row, col] = getRowCol(Number(target.id))
 	drawMode = board.grid[row][col] === Board.dead
-	if (e.button === 0) isDragging = true
+	if (event.button === 0) isDragging = true
 	if (fillBucketActive) {
 		fillBucketText.style.color = 'red'
 		fillEmpty()
 	}
 })
 
+window.addEventListener('mousemove', event => {
+	const target = event.target as HTMLDivElement
+	const id = target.id
+	const div = document.getElementById(String(id)) as HTMLDivElement
+	const [row, col] = getRowCol(Number(id))
+	if (!isDragging) return
+	if (drawMode) {
+		changeValueAtIndex(id, board.grid, 1)
+		bounceAnim(div)
+	} else {
+		changeValueAtIndex(id, board.grid, 0)
+		bounceAnim(div)
+	}
+	checkColor(row, col, div)
+})
+
 window.addEventListener('mouseup', () => (isDragging = false))
 
-deadAliveBtn.forEach(element => {
-	element.addEventListener('click', e => {
-		const target = e.target as HTMLButtonElement
-
-		
-		if (target.style.backgroundColor === 'red') {
-			console.log('red')
-		}
-	})
+window.addEventListener('click', event => {
+	const target = event.target as HTMLButtonElement
+	if (target.className !== 'deadAlive') return
+	const child = target.firstChild as HTMLParagraphElement
+	if (child.innerText === 'Dead') target.innerHTML = '<p>Alive</p>'
+	if (child.innerText === 'Alive') target.innerHTML = '<p>Dead</p>'
 })
 
 toggleBWBtn.addEventListener('click', () => {
@@ -598,10 +609,6 @@ toggleBWBtn.addEventListener('click', () => {
 
 colorPicker.addEventListener('input', () => (Board.colors.draw = colorPicker.value))
 
-previousBtn.addEventListener('click', () => {
-	if (generation >= 1) prev()
-})
-
 // hasReset = true
 resetBtn.addEventListener('click', () => reset())
 
@@ -614,7 +621,7 @@ reverseBtn.addEventListener('click', () => {
 })
 
 playBtn.addEventListener('click', () => {
-	if (stopped) {
+	if (!stopped) {
 		reversing = false
 		playing = true
 		play()
@@ -635,10 +642,10 @@ window.addEventListener('keydown', event => {
 		}
 	}
 
-	if (event.key === 'ArrowLeft') {
+	if (event.key === 'ArrowLeft' && generation >= 1 && !reversing) {
 		prev()
 	}
-	if (event.key === 'ArrowRight') {
+	if (event.key === 'ArrowRight' && !playing) {
 		next()
 	}
 	if (event.key === 'Escape') {
@@ -647,19 +654,48 @@ window.addEventListener('keydown', event => {
 	}
 })
 
-modalBackground.addEventListener('click', () => {
-	modalActive = !modalActive
-	modalBackground.style.display = modalActive ? 'initial' : 'none'
+addRuleBtn.addEventListener('click', e => {
+	const rule = document.createElement('div')
+	rule.className = 'rule'
+	rule.innerHTML = `<div class="ruleLeft ruleRightLeft">
+	<p>If</p>
+	<button class="deadAlive"><p>Dead</p></button>
+</div>
+<div class="ruleMiddle">
+	<div class="middleLeft">
+		<p>And Neighbors</p>
+	</div>
+	<div class="ruleInput">
+		<div class="inputSec great">
+			<div class="labelWrap">
+				<label for="great"> >  </label>
+			</div>
+			<input name="great" type="text" />
+		</div>
+		<div class="inputSec less">
+			<div class="labelWrap">
+				<label for="less"> &#60 </label>
+			</div>
+			<input name="less" type="text" />
+		</div>
+		<div class="inputSec equal">
+			<div class="labelWrap">
+				<label for="equal"> = </label>
+			</div>
+			<input name="equal" type="text" />
+		</div>
+	</div>
+</div>
+<div class="ruleRight ruleRightLeft">
+	<p>Then</p>
+	<button class="deadAlive"><p>Dead</p></button>
+</div>`
+
+	ruleSection.appendChild(rule)
+	ruleSection.scrollTop = ruleSection.scrollHeight
 })
 
-settingModal.addEventListener('click', e => {
-	e.stopPropagation()
-})
-
-pauseBtn.addEventListener('click', () => {
-	reversing = false
-	playing = false
-})
+pauseBtn.addEventListener('click', () => pause())
 
 stopBtn.addEventListener('click', () => stopSimulation())
 
@@ -669,8 +705,12 @@ startBtn.addEventListener('click', () => {
 	start()
 })
 
+previousBtn.addEventListener('click', () => {
+	if (generation >= 1 && !reversing) prev()
+})
+
 nextBtn.addEventListener('click', () => {
-	if (!stopped) next()
+	if (!playing) next()
 })
 
 randomBtn.addEventListener('click', () => fillRandom())
@@ -684,7 +724,7 @@ fillBucketBtn.addEventListener('click', () => {
 
 clearBtn.addEventListener('click', () => clearBoard())
 
-sizeSlider.addEventListener('change', (e: Event) => {
+sizeSlider.addEventListener('change', e => {
 	const event = e.target as HTMLInputElement
 	const eventValue = Number(event.value)
 	changeBoardSize(eventValue)
