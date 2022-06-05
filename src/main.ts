@@ -38,7 +38,7 @@ const down = document.getElementById('down') as HTMLElement & SVGElement
 const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
-const deadAliveBtn = document.querySelectorAll('.deadAlive') as NodeListOf<Element>
+// const deadAliveBtn = document.querySelectorAll('.deadAlive') as NodeListOf<Element>
 
 const arrayAllEqual = (arr: number[]) => {
 	let isEqual = true
@@ -654,7 +654,7 @@ window.addEventListener('keydown', event => {
 	}
 })
 
-addRuleBtn.addEventListener('click', e => {
+addRuleBtn.addEventListener('click', () => {
 	const rule = document.createElement('div')
 	rule.className = 'rule'
 	rule.innerHTML = `<div class="ruleLeft ruleRightLeft">
