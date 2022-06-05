@@ -11,7 +11,7 @@
 }
 
 :root {
-	--primary: hsl(220, 13%, 18%);
+	--primary: #282c34;
 	--secondary: hsl(220, 13%, 28%);
 	--tertiary: hsl(220, 13%, 8%);
 }
@@ -45,27 +45,14 @@ body {
 	position: fixed;
 	width: min(80vmin, 60vw);
 	height: min(80vmin, 60vw);
-	z-index: 0;
 	margin: auto;
 	inset: 0;
 	box-sizing: content-box;
-	transform-origin: 0 0;
 	border: solid hsl(220, 13%, 15%) 10px;
 	border-radius: 10px;
 	background-color: rgb(54, 54, 54);
 	box-shadow: 15px -15px 19px #181b20, -15px 15px 19px #383d48;
 	overflow: hidden;
-}
-
-canvas {
-	display: block;
-	position: absolute;
-	z-index: 100;
-	inset: 0;
-	margin: auto;
-	opacity: 1;
-	pointer-events: none;
-	transition: opacity 500ms ease-in-out;
 }
 
 #board {
@@ -76,7 +63,6 @@ canvas {
 	width: 100%;
 	height: 100%;
 	inset: 0;
-	margin: auto;
 	background-color: rgba(0, 0, 0, 0);
 	transform-origin: 0 0;
 	gap: 3px;
@@ -118,37 +104,14 @@ canvas {
 .place {
 	width: 100%;
 	height: 100%;
-	opacity: 1;
 	border-radius: 10%;
 	background-color: white;
-	outline: none;
-	border: none;
 	transition: border-radius 500ms ease-in-out;
 	transition: opacity 500ms ease-in-out;
 }
 
 .place:hover {
 	transform: scale(1.05);
-}
-#startBtn {
-	position: absolute;
-	width: 10vmin;
-	height: 10vmin;
-	right: 2%;
-	margin: 5%;
-	outline: none;
-	border: none;
-	border-radius: 50%;
-	background-color: white;
-	transition: transform 100ms ease-in-out;
-}
-
-#startBtn:hover {
-	transform: scale(1.1);
-}
-
-#startBtn:active {
-	transform: scale(0.9);
 }
 
 #right {
@@ -176,7 +139,7 @@ canvas {
 	height: 4vh;
 	margin-block: 5%;
 	padding: 5%;
-	border-radius: 9999px;
+	border-radius: 100px;
 	transition: transform 100ms ease-in-out;
 	transition: background-color 100ms ease-in-out;
 }
@@ -308,16 +271,6 @@ input[type='color']::-webkit-color-swatch {
 	display: none;
 }
 
-#settingModal {
-	position: absolute;
-	inset: 0;
-	margin: auto;
-	width: 80vw;
-	height: 80vh;
-	background-color: var(--primary);
-	border-radius: 2rem;
-}
-
 #settingModalText {
 	text-align: center;
 	font-size: 5rem;
@@ -370,7 +323,7 @@ input[type='color']::-webkit-color-swatch {
 }
 
 #addRuleBtn:active {
-	transform: scale(0.9);
+	transform: scale(1.05);
 }
 
 #ruleSection {
@@ -527,6 +480,111 @@ input[type='color']::-webkit-color-swatch {
 	right: 0;
 }
 
-#test {
-	color: hsl(0, 0%, 0%);
+/* -----------------------------slider Stuff----------------------------- */
+
+#up {
+	top: 5%;
+}
+
+.btn {
+	position: absolute;
+	height: 30px;
+	width: 30px;
+	inset-inline: 0;
+	margin-inline: auto;
+	fill: #1d2025;
+	transition: transform 100ms ease-in-out;
+}
+
+.btn:hover {
+	transform: scale(1.2);
+	fill: #15171b;
+}
+
+.btn:active {
+	transform: scale(0.9);
+	fill: #3f4551;
+}
+
+#down {
+	transform: rotate(180deg);
+	bottom: 5%;
+}
+
+#sliderContainer {
+	display: grid;
+	place-content: center;
+	position: absolute;
+	height: 80vh;
+	width: 6vw;
+	border-radius: 10000em;
+	inset: 0;
+	margin: auto;
+	background: linear-gradient(45deg, #24282f, #2b2f38);
+	box-shadow: 10px -10px 20px #131518, -10px 10px 20px #3d4350;
+}
+
+#rangeWrap {
+	position: relative;
+	width: 60vh;
+	padding: 1.5em 0; /*  Giving more room for hover  */
+	transform: rotate(270deg);
+}
+
+/* Custom Bar */
+#rangeWrap::before {
+	content: '';
+	-webkit-box-shadow: 0px 0px 13px 7px rgba(0, 0, 0, 0.4);
+	box-shadow: 0px 0px 13px 7px rgba(0, 0, 0, 0.4);
+	background: rgb(40, 44, 48);
+	background: linear-gradient(90deg, rgba(40, 44, 48, 1) 15%, rgba(95, 104, 122, 1) 40%, rgba(95, 104, 122, 1) 60%, rgba(40, 44, 52, 1) 85%);
+	width: 100%;
+	height: 8px;
+	position: absolute;
+	border-radius: 4px;
+	inset-block: 0;
+	margin-block: auto;
+	transition: height 100ms ease;
+}
+
+#rangeWrap:hover::before {
+	height: 10px;
+}
+
+/*  Hide Original */
+#range {
+	width: 100%;
+	cursor: pointer;
+	opacity: 0;
+}
+
+#bubble {
+	background: hsl(218, 12%, 30%);
+	/* border: 3px solid hsl(218, 12%, 20%); */
+	position: absolute;
+	border-radius: 50%;
+	width: 1.5rem;
+	height: 1.5rem;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none; /* Remove pointer events on Bubble so user can click on the actual thumb beneath it!  */
+	color: transparent;
+	display: grid;
+	place-items: center; /*  Place the number on the center  */
+	font-weight: bold;
+	transition: color 100ms ease, transform 100ms ease;
+	user-select: none; /*  Prevent Accidentally highlighting the number while sliding the cursor  */
+}
+
+#rangeWrap:hover #bubble,
+#rangeWrap:focus #bubble {
+	color: hsl(218, 12%, 60%);
+	transform: translateY(-50%) scale(1.5) rotate(90deg);
+	padding: 0.1em;
+}
+
+.hover #bubble {
+	color: hsl(218, 12%, 60%);
+	transform: translateY(-50%) scale(1.5) rotate(90deg);
+	padding: 0.1em;
 }

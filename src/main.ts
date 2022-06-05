@@ -1,5 +1,4 @@
 import './style.css'
-import './slider.css'
 
 const genTitle = document.getElementById('genTitle') as HTMLHeadingElement
 const drawBoard = document.getElementById('board') as HTMLDivElement
