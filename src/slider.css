@@ -93,11 +93,11 @@
 	/* border: 3px solid hsl(218, 12%, 20%); */
 	position: absolute;
 	border-radius: 50%;
-	width: 2rem;
-	height: 2rem;
+	width: 1.5rem;
+	height: 1.5rem;
 	top: 50%;
 	transform: translateY(-50%);
-	pointer-events: none; /* Remove pointer events on Bubble so user can click on the actual thumb beaneath it!  */
+	pointer-events: none; /* Remove pointer events on Bubble so user can click on the actual thumb beneath it!  */
 	color: transparent;
 	display: grid;
 	place-items: center; /*  Place the number on the center  */

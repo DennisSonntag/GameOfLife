@@ -1,3 +1,2 @@
 Game of life to do list
 -add on the fly alteration and addition of rules(modal window)
--get domain name and dns name servers(freedom , cloud flare)

@@ -55,10 +55,10 @@ class Canvas {
 	static canvas = document.querySelector('canvas') as HTMLCanvasElement
 	static ctx = Canvas.canvas.getContext('2d') as CanvasRenderingContext2D
 	static renderCanvas = () => {
+		const size = drawBoard.clientWidth / sideLengthCells
 		for (let row = 0; row < board.grid.length; row++) {
 			for (let col = 0; col < board.grid[0].length; col++) {
 				const cell = board.grid[row][col]
-				const size = drawBoard.clientWidth / sideLengthCells
 				Canvas.ctx.beginPath()
 				Canvas.ctx.rect(col * size, row * size, size, size)
 				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -101,13 +101,23 @@ class Canvas {
 					if (generation <= 1) {
 						const [h, s, l] = getColorValueFromIndex(row * sideLengthCells + col)
 						Canvas.ctx.fillStyle = hslString(h, s, l)
+						CanvasColors[row][col] = hslString(h, s, l)
 					} else if (generation > 1) {
 						// grayscale
-						if (arrayAllEqual(currentRgb)) Canvas.ctx.fillStyle = hslString(0, 0, l)
-						else Canvas.ctx.fillStyle = hslString(h, 100, 50)
+						if (arrayAllEqual(currentRgb)) {
+							Canvas.ctx.fillStyle = hslString(0, 0, l)
+							CanvasColors[row][col] = hslString(0, 0, l)
+						} else if (!arrayAllEqual(currentRgb)) {
+							Canvas.ctx.fillStyle = hslString(h, 100, 50)
+							CanvasColors[row][col] = hslString(h, 100, 50)
+						}
 					}
-				} else if (cell === Board.dead) Canvas.ctx.fillStyle = 'white'
+				} else if (cell === Board.dead) {
+					Canvas.ctx.fillStyle = 'white'
+					CanvasColors[row][col] = 'white'
+				}
 				Canvas.ctx.fill()
+				// Canvas.ctx.stroke()
 			}
 		}
 	}
@@ -152,17 +162,19 @@ class Board extends Calculations {
 	}
 	static dead = 0
 	static alive = 1
-	static makeBoardArray = (size: number): number[][] => new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
+	static makeBoardArrayNumber = (size: number): number[][] => new Array(size).fill(this.dead).map(() => new Array(size).fill(this.dead))
+	static makeBoardArrayString = (size: number): string[][] => new Array(size).fill('').map(() => new Array(size).fill(''))
 	grid: number[][]
 	constructor(size: number) {
 		super()
-		this.grid = Board.makeBoardArray(size)
+		this.grid = Board.makeBoardArrayNumber(size)
 	}
 }
 
 const sliderMax = Number(sizeSlider.getAttribute('max'))
 
 const PreviousGens: number[][][] = []
+let CanvasColors: string[][] = []
 let fillBucketActive = false
 let fillBucketInfo: number
 let sideLengthCells = 8
@@ -197,49 +209,61 @@ const update = () => {
 	divBoard.style.transform = `matrix(${translate.scale},0,0,${translate.scale},${translate.translateX},${translate.translateY})`
 }
 
-centerDiv.addEventListener('wheel', (event: WheelEvent) => {
-	// Determine before anything else. Otherwise weird jumping.
-	if (zoomFactor + event.deltaY / 5000 > 3 || zoomFactor + event.deltaY / 5000 < 0.4) return
+centerDiv.addEventListener(
+	'wheel',
+	(event: WheelEvent) => {
+		// Determine before anything else. Otherwise weird jumping.
+		if (zoomFactor + event.deltaY / 1000 > 3 || zoomFactor + event.deltaY / 1000 < 0.4) return
 
-	const oldZoomFactor = zoomFactor
-	zoomFactor += event.deltaY / 5000
+		const oldZoomFactor = zoomFactor
+		zoomFactor += event.deltaY / 1000
 
-	mousePosition.x = event.clientX - centerDivSize.x
-	mousePosition.y = event.clientY - centerDivSize.y
+		mousePosition.x = event.clientX - centerDivSize.x
+		mousePosition.y = event.clientY - centerDivSize.y
 
-	// Calculations
-	translate.scale = zoomFactor
+		// Calculations
+		translate.scale = zoomFactor
 
-	const contentMousePosX = mousePosition.x - translate.translateX
-	const contentMousePosY = mousePosition.y - translate.translateY
-	const x = mousePosition.x - contentMousePosX * (zoomFactor / oldZoomFactor)
-	const y = mousePosition.y - contentMousePosY * (zoomFactor / oldZoomFactor)
+		const contentMousePosX = mousePosition.x - translate.translateX
+		const contentMousePosY = mousePosition.y - translate.translateY
+		const x = mousePosition.x - contentMousePosX * (zoomFactor / oldZoomFactor)
+		const y = mousePosition.y - contentMousePosY * (zoomFactor / oldZoomFactor)
 
-	translate.translateX = x
-	translate.translateY = y
+		translate.translateX = x
+		translate.translateY = y
 
-	update()
-})
-centerDiv.addEventListener('mousedown', (event: MouseEvent) => {
-	if (event.button !== 1) return
-	initialContentsPos.x = translate.translateX
-	initialContentsPos.y = translate.translateY
-	pinnedMousePosition.x = event.clientX
-	pinnedMousePosition.y = event.clientY
-	panningAllowed = true
-})
-centerDiv.addEventListener('mousemove', (event: MouseEvent) => {
-	mousePosition.x = event.clientX
-	mousePosition.y = event.clientY
-	if (panningAllowed) {
-		const diffX = mousePosition.x - pinnedMousePosition.x
-		const diffY = mousePosition.y - pinnedMousePosition.y
-		translate.translateX = initialContentsPos.x + diffX
-		translate.translateY = initialContentsPos.y + diffY
-	}
-	update()
-})
-centerDiv.addEventListener('mouseup', () => (panningAllowed = false))
+		update()
+	},
+	{ passive: true }
+)
+centerDiv.addEventListener(
+	'mousedown',
+	(event: MouseEvent) => {
+		if (event.button !== 1) return
+		initialContentsPos.x = translate.translateX
+		initialContentsPos.y = translate.translateY
+		pinnedMousePosition.x = event.clientX
+		pinnedMousePosition.y = event.clientY
+		panningAllowed = true
+	},
+	{ passive: true }
+)
+centerDiv.addEventListener(
+	'mousemove',
+	(event: MouseEvent) => {
+		mousePosition.x = event.clientX
+		mousePosition.y = event.clientY
+		if (panningAllowed) {
+			const diffX = mousePosition.x - pinnedMousePosition.x
+			const diffY = mousePosition.y - pinnedMousePosition.y
+			translate.translateX = initialContentsPos.x + diffX
+			translate.translateY = initialContentsPos.y + diffY
+		}
+		update()
+	},
+	{ passive: true }
+)
+centerDiv.addEventListener('mouseup', () => (panningAllowed = false), { passive: true })
 
 // -----------------------------------
 
@@ -345,7 +369,7 @@ const stopSimulation = () => {
 	stopMsg.style.display = 'none'
 	Canvas.clearCanvas()
 	started = false
-	populate()
+	populateStop()
 	changeStylesFromCanvas()
 	if (sideLengthCells >= 20) changeStylesSliderLarge()
 	if (sideLengthCells <= 20) changeStylesSliderSmall()
@@ -433,7 +457,8 @@ const fillEmpty = () => {
 
 const changeBoardSize = (size: number) => {
 	sideLengthCells = size
-	board.grid = Board.makeBoardArray(sideLengthCells)
+	board.grid = Board.makeBoardArrayNumber(sideLengthCells)
+	CanvasColors = Board.makeBoardArrayString(sideLengthCells)
 	populate()
 	drawBoard.style.gridTemplateRows = `repeat(${sideLengthCells}, 1fr)`
 	drawBoard.style.gridTemplateColumns = `repeat(${sideLengthCells}, 1fr)`
@@ -447,7 +472,7 @@ const reset = () => {
 	isDragging = false
 	playing = false
 	drawMode = true
-	board.grid = Board.makeBoardArray(sideLengthCells)
+	board.grid = Board.makeBoardArrayNumber(sideLengthCells)
 	setGeneration(0)
 	Canvas.clearCanvas()
 }
@@ -497,12 +522,16 @@ const next = () => {
 }
 
 const clearBoard = () => {
-	board.grid = Board.makeBoardArray(sideLengthCells)
+	board.grid = Board.makeBoardArrayNumber(sideLengthCells)
 	;(document.querySelectorAll('.place') as NodeListOf<HTMLElement>).forEach(element => (element.style.backgroundColor = 'white'))
 }
 
 const checkColor = (row: number, col: number, div: HTMLDivElement) => {
 	div.style.backgroundColor = board.grid[row][col] ? Board.colors.draw : Board.colors.light
+}
+
+const checkColorStop = (row: number, col: number, div: HTMLDivElement) => {
+	div.style.backgroundColor = CanvasColors[row][col]
 }
 
 const bounceAnim = (div: HTMLDivElement) => {
@@ -523,227 +552,339 @@ const populate = () => {
 			div.className = 'place'
 			// check if place should be black or white
 			checkColor(row, col, div)
-			div.addEventListener('click', () => {
-				if (drawMode) {
-					changeValueAtIndex(div.id, board.grid, 1)
-					bounceAnim(div)
-				} else {
-					if (!fillBucketActive) changeValueAtIndex(div.id, board.grid, 0)
-					if (fillBucketActive) fillBucketActive = false
-					bounceAnim(div)
-				}
-				checkColor(row, col, div)
-			})
+			div.addEventListener(
+				'click',
+				() => {
+					if (drawMode) {
+						changeValueAtIndex(div.id, board.grid, 1)
+						bounceAnim(div)
+					} else {
+						if (!fillBucketActive) changeValueAtIndex(div.id, board.grid, 0)
+						if (fillBucketActive) fillBucketActive = false
+						bounceAnim(div)
+					}
+					checkColor(row, col, div)
+				},
+				{ passive: true }
+			)
 			drawBoard.appendChild(div)
 			count++
 		}
 	}
 }
 
-window.addEventListener('load', () => {
-	Canvas.ctx.canvas.width = drawBoard.clientWidth
-	Canvas.ctx.canvas.height = drawBoard.clientHeight
-	setBubble(range, bubble)
-
-	populate()
-})
-
-window.addEventListener('mousedown', event => {
-	const target = event.target as HTMLDivElement
-	fillBucketInfo = Number(target.id)
-	if (target.className !== 'place') return
-	const [row, col] = getRowCol(Number(target.id))
-	drawMode = board.grid[row][col] === Board.dead
-	if (event.button === 0) isDragging = true
-	if (fillBucketActive) {
-		fillBucketText.style.color = 'red'
-		fillEmpty()
-	}
-})
-
-window.addEventListener('mousemove', event => {
-	const target = event.target as HTMLDivElement
-	const id = target.id
-	const div = document.getElementById(String(id)) as HTMLDivElement
-	const [row, col] = getRowCol(Number(id))
-	if (!isDragging) return
-	if (drawMode) {
-		changeValueAtIndex(id, board.grid, 1)
-		bounceAnim(div)
-	} else {
-		changeValueAtIndex(id, board.grid, 0)
-		bounceAnim(div)
-	}
-	checkColor(row, col, div)
-})
-
-window.addEventListener('mouseup', () => (isDragging = false))
-
-window.addEventListener('click', event => {
-	const target = event.target as HTMLButtonElement
-	if (target.className !== 'deadAlive') return
-	const child = target.firstChild as HTMLParagraphElement
-	if (child.innerText === 'Dead') target.innerHTML = '<p>Alive</p>'
-	if (child.innerText === 'Alive') target.innerHTML = '<p>Dead</p>'
-})
-
-toggleBWBtn.addEventListener('click', () => {
-	blackWhite = !blackWhite
-	toggleBWText.innerText = blackWhite ? 'Toggle Color' : 'Toggle B/W'
-	if (!blackWhite) {
-		toggleBWText.style.color = 'black'
-		toggleBWText.classList.remove('rainbow')
-	} else if (blackWhite) toggleBWText.classList.add('rainbow')
-	blackWhite ? startingElements.pop() : startingElements.push(colorPicker)
-	colorPicker.style.display = blackWhite ? 'none' : 'initial'
-	Board.colors.draw = blackWhite ? 'black' : colorPicker.value
+const populateStop = () => {
+	drawBoard.innerHTML = ''
 	let count = 0
 	for (let row = 0; row < board.grid.length; row++) {
 		for (let col = 0; col < board.grid[0].length; col++) {
-			const div = document.getElementById(String(count)) as HTMLDivElement
-			checkColor(row, col, div)
+			// setup element
+			const div = document.createElement('div')
+			div.id = String(count)
+			div.className = 'place'
+			// check if place should be black or white
+			checkColorStop(row, col, div)
+			div.addEventListener(
+				'click',
+				() => {
+					if (drawMode) {
+						changeValueAtIndex(div.id, board.grid, 1)
+						bounceAnim(div)
+					} else {
+						if (!fillBucketActive) changeValueAtIndex(div.id, board.grid, 0)
+						if (fillBucketActive) fillBucketActive = false
+						bounceAnim(div)
+					}
+					checkColorStop(row, col, div)
+				},
+				{ passive: true }
+			)
+			drawBoard.appendChild(div)
 			count++
 		}
 	}
-})
+}
 
-colorPicker.addEventListener('input', () => (Board.colors.draw = colorPicker.value))
+window.addEventListener(
+	'load',
+	() => {
+		CanvasColors = Board.makeBoardArrayString(sideLengthCells)
+		Canvas.ctx.canvas.width = drawBoard.clientWidth
+		Canvas.ctx.canvas.height = drawBoard.clientHeight
+		setBubble(range, bubble)
+
+		populate()
+	},
+	{ passive: true }
+)
+
+window.addEventListener(
+	'mousedown',
+	event => {
+		const target = event.target as HTMLDivElement
+		fillBucketInfo = Number(target.id)
+		if (target.className !== 'place') return
+		const [row, col] = getRowCol(Number(target.id))
+		drawMode = board.grid[row][col] === Board.dead
+		if (event.button === 0) isDragging = true
+		if (fillBucketActive) {
+			fillBucketText.style.color = 'red'
+			fillEmpty()
+		}
+	},
+	{ passive: true }
+)
+
+window.addEventListener(
+	'mousemove',
+	event => {
+		const target = event.target as HTMLDivElement
+		const id = target.id
+		const div = document.getElementById(String(id)) as HTMLDivElement
+		const [row, col] = getRowCol(Number(id))
+		if (target.className !== 'place') return
+		if (!isDragging) return
+		if (drawMode) {
+			changeValueAtIndex(id, board.grid, 1)
+			bounceAnim(div)
+		} else {
+			changeValueAtIndex(id, board.grid, 0)
+			bounceAnim(div)
+		}
+		checkColor(row, col, div)
+	},
+	{ passive: true }
+)
+
+window.addEventListener('mouseup', () => (isDragging = false), { passive: true })
+
+window.addEventListener(
+	'click',
+	event => {
+		const target = event.target as HTMLButtonElement
+		if (target.className !== 'deadAlive') return
+		const child = target.firstChild as HTMLParagraphElement
+		if (child.innerText === 'Dead') target.innerHTML = '<p>Alive</p>'
+		if (child.innerText === 'Alive') target.innerHTML = '<p>Dead</p>'
+	},
+	{ passive: true }
+)
+
+window.addEventListener(
+	'keydown',
+	event => {
+		if (event.key === ' ' && started) {
+			if (!playing) {
+				if (!stopped) {
+					reversing = false
+					playing = true
+					play()
+				}
+			} else {
+				reversing = false
+				playing = false
+			}
+		}
+
+		if (event.key === 'ArrowLeft' && generation >= 1 && !reversing) {
+			prev()
+		}
+		if (event.key === 'ArrowRight' && !playing) {
+			next()
+		}
+		if (event.key === 'Escape') {
+			modalActive = !modalActive
+			modalBackground.style.display = modalActive ? 'initial' : 'none'
+		}
+	},
+	{ passive: true }
+)
+
+window.addEventListener(
+	'resize',
+	() => {
+		Canvas.ctx.canvas.width = drawBoard.clientWidth
+		Canvas.ctx.canvas.height = drawBoard.clientHeight
+		if (started) Canvas.renderCanvas()
+	},
+	{ passive: true }
+)
+
+toggleBWBtn.addEventListener(
+	'click',
+	() => {
+		blackWhite = !blackWhite
+		toggleBWText.innerText = blackWhite ? 'Toggle Color' : 'Toggle B/W'
+		if (!blackWhite) {
+			toggleBWText.style.color = 'black'
+			toggleBWText.classList.remove('rainbow')
+		} else if (blackWhite) toggleBWText.classList.add('rainbow')
+		blackWhite ? startingElements.pop() : startingElements.push(colorPicker)
+		colorPicker.style.display = blackWhite ? 'none' : 'initial'
+		Board.colors.draw = blackWhite ? '#000000' : colorPicker.value
+		let count = 0
+		for (let row = 0; row < board.grid.length; row++) {
+			for (let col = 0; col < board.grid[0].length; col++) {
+				const div = document.getElementById(String(count)) as HTMLDivElement
+				checkColor(row, col, div)
+				count++
+			}
+		}
+	},
+	{ passive: true }
+)
+
+colorPicker.addEventListener('input', () => (Board.colors.draw = colorPicker.value), { passive: true })
 
 // hasReset = true
-resetBtn.addEventListener('click', () => reset())
+resetBtn.addEventListener('click', () => reset(), { passive: true })
 
-reverseBtn.addEventListener('click', () => {
-	if (generation >= 1) {
-		reversing = true
-		playing = false
-		reverse()
-	}
-})
-
-playBtn.addEventListener('click', () => {
-	if (!stopped) {
-		reversing = false
-		playing = true
-		play()
-	}
-})
-
-window.addEventListener('keydown', event => {
-	if (event.key === ' ' && started) {
-		if (!playing) {
-			if (!stopped) {
-				reversing = false
-				playing = true
-				play()
-			}
-		} else {
-			reversing = false
+reverseBtn.addEventListener(
+	'click',
+	() => {
+		if (generation >= 1) {
+			reversing = true
 			playing = false
+			reverse()
 		}
-	}
+	},
+	{ passive: true }
+)
 
-	if (event.key === 'ArrowLeft' && generation >= 1 && !reversing) {
-		prev()
-	}
-	if (event.key === 'ArrowRight' && !playing) {
-		next()
-	}
-	if (event.key === 'Escape') {
-		modalActive = !modalActive
-		modalBackground.style.display = modalActive ? 'initial' : 'none'
-	}
-})
+playBtn.addEventListener(
+	'click',
+	() => {
+		if (!stopped) {
+			reversing = false
+			playing = true
+			play()
+		}
+	},
+	{ passive: true }
+)
 
-addRuleBtn.addEventListener('click', () => {
-	const rule = document.createElement('div')
-	rule.className = 'rule'
-	rule.innerHTML = `<div class="ruleLeft ruleRightLeft">
-	<p>If</p>
-	<button class="deadAlive"><p>Dead</p></button>
-</div>
-<div class="ruleMiddle">
-	<div class="middleLeft">
-		<p>And Neighbors</p>
-	</div>
-	<div class="ruleInput">
-		<div class="inputSec great">
-			<div class="labelWrap">
-				<label for="great"> >  </label>
-			</div>
-			<input name="great" type="text" />
-		</div>
-		<div class="inputSec less">
-			<div class="labelWrap">
-				<label for="less"> &#60 </label>
-			</div>
-			<input name="less" type="text" />
-		</div>
-		<div class="inputSec equal">
-			<div class="labelWrap">
-				<label for="equal"> = </label>
-			</div>
-			<input name="equal" type="text" />
-		</div>
-	</div>
-</div>
-<div class="ruleRight ruleRightLeft">
-	<p>Then</p>
-	<button class="deadAlive"><p>Dead</p></button>
-</div>`
+addRuleBtn.addEventListener(
+	'click',
+	() => {
+		const rule = document.createElement('div')
+		rule.className = 'rule'
+		rule.innerHTML = `<div class="ruleLeft ruleRightLeft">
+							<p>If</p>
+							<button class="deadAlive"><p>Dead</p></button>
+						</div>
+						<div class="ruleMiddle">
+							<div class="middleLeft">
+								<p>And Neighbors</p>
+							</div>
+							<div class="ruleInput">
+								<div class="inputSec great">
+									<div class="labelWrap">
+										<label for="great"> >  </label>
+									</div>
+									<input name="great" type="text" />
+								</div>
+								<div class="inputSec less">
+									<div class="labelWrap">
+										<label for="less"> &#60 </label>
+									</div>
+									<input name="less" type="text" />
+								</div>
+								<div class="inputSec equal">
+									<div class="labelWrap">
+										<label for="equal"> = </label>
+									</div>
+									<input name="equal" type="text" />
+								</div>
+							</div>
+						</div>
+						<div class="ruleRight ruleRightLeft">
+							<p>Then</p>
+							<button class="deadAlive"><p>Dead</p></button>
+						</div>`
 
-	ruleSection.appendChild(rule)
-	ruleSection.scrollTop = ruleSection.scrollHeight
-})
+		ruleSection.appendChild(rule)
+		ruleSection.scrollTop = ruleSection.scrollHeight
+	},
+	{ passive: true }
+)
 
-pauseBtn.addEventListener('click', () => pause())
+pauseBtn.addEventListener('click', () => pause(), { passive: true })
 
-stopBtn.addEventListener('click', () => stopSimulation())
+stopBtn.addEventListener('click', () => stopSimulation(), { passive: true })
 
-startBtn.addEventListener('click', () => {
-	stopped = false
-	started = true
-	start()
-})
+startBtn.addEventListener(
+	'click',
+	() => {
+		stopped = false
+		started = true
+		start()
+	},
+	{ passive: true }
+)
 
-previousBtn.addEventListener('click', () => {
-	if (generation >= 1 && !reversing) prev()
-})
+previousBtn.addEventListener(
+	'click',
+	() => {
+		if (generation >= 1 && !reversing) prev()
+	},
+	{ passive: true }
+)
 
-nextBtn.addEventListener('click', () => {
-	if (!playing) next()
-})
+nextBtn.addEventListener(
+	'click',
+	() => {
+		if (!playing) next()
+	},
+	{ passive: true }
+)
 
-randomBtn.addEventListener('click', () => fillRandom())
+randomBtn.addEventListener('click', () => fillRandom(), { passive: true })
 
-fillColor.addEventListener('click', () => fillBoard())
+fillColor.addEventListener('click', () => fillBoard(), { passive: true })
 
-fillBucketBtn.addEventListener('click', () => {
-	fillBucketActive = true
-	fillBucketText.style.color = 'green'
-})
+fillBucketBtn.addEventListener(
+	'click',
+	() => {
+		fillBucketActive = true
+		fillBucketText.style.color = 'green'
+	},
+	{ passive: true }
+)
 
-clearBtn.addEventListener('click', () => clearBoard())
+clearBtn.addEventListener('click', () => clearBoard(), { passive: true })
 
-sizeSlider.addEventListener('change', e => {
-	const event = e.target as HTMLInputElement
-	const eventValue = Number(event.value)
-	changeBoardSize(eventValue)
-	if (eventValue >= 20) changeStylesSliderLarge()
-	if (eventValue <= 20) changeStylesSliderSmall()
-})
+sizeSlider.addEventListener(
+	'change',
+	e => {
+		const event = e.target as HTMLInputElement
+		const eventValue = Number(event.value)
+		changeBoardSize(eventValue)
+		if (eventValue >= 20) changeStylesSliderLarge()
+		if (eventValue <= 20) changeStylesSliderSmall()
+	},
+	{ passive: true }
+)
 
-range.addEventListener('input', () => setBubble(range, bubble))
+range.addEventListener('input', () => setBubble(range, bubble), { passive: true })
 
-up.addEventListener('click', () => {
-	if (sideLengthCells + 1 <= sliderMax) {
-		sideLengthCells++
-		hoverEffect()
-	}
-})
+up.addEventListener(
+	'click',
+	() => {
+		if (sideLengthCells + 1 <= sliderMax) {
+			sideLengthCells++
+			hoverEffect()
+		}
+	},
+	{ passive: true }
+)
 
-down.addEventListener('click', () => {
-	if (sideLengthCells - 1 >= sliderMax) {
-		sideLengthCells--
-		hoverEffect()
-	}
-})
+down.addEventListener(
+	'click',
+	() => {
+		if (sideLengthCells - 1 >= sliderMax) {
+			sideLengthCells--
+			hoverEffect()
+		}
+	},
+	{ passive: true }
+)

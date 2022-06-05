@@ -45,8 +45,8 @@ body {
 	box-sizing: content-box;
 	z-index: 0;
 	position: fixed;
-	width: 80vmin;
-	height: 80vmin;
+	width: min(80vmin, 60vw);
+	height: min(80vmin, 60vw);
 	transform-origin: 0 0;
 	border: solid hsl(220, 13%, 15%) 10px;
 	border-radius: 10px;
@@ -70,13 +70,11 @@ canvas {
 
 #board {
 	transform-origin: 0 0;
-	z-index: 1;
-	grid-area: board;
 	position: absolute;
 	inset: 0;
 	margin: auto;
-	width: 80vmin;
-	height: 80vmin;
+	width: 100%;
+	height: 100%;
 	background-color: rgba(0, 0, 0, 0);
 	display: grid;
 	grid-template-columns: repeat(8, 1fr);
@@ -106,7 +104,8 @@ canvas {
 }
 
 #genTitle {
-	font-size: 4rem;
+	white-space: nowrap;
+	font-size: 2rem;
 	z-index: 2;
 	width: fit-content;
 	height: fit-content;
@@ -526,4 +525,8 @@ input[type='color']::-webkit-color-swatch {
 	width: 30%;
 	height: 100%;
 	right: 0;
+}
+
+#test{
+	color: hsl(0, 0%, 0%);
 }
