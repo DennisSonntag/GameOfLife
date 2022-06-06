@@ -183,8 +183,8 @@ let modalActive = false
 let reversing = false
 let playing = false
 let stopped = false
+let editing = true
 let drawMode = true
-let started = false
 let generation = 0
 const board = new Board(sideLengthCells)
 let rules = {
@@ -400,7 +400,7 @@ const stopSimulation = () => {
 	stopped = false
 	stopMsg.style.display = 'none'
 	Canvas.clearCanvas()
-	started = false
+	editing = true
 	populateStop()
 	changeStylesFromCanvas()
 	if (sideLengthCells >= 20) changeStylesSliderLarge()
@@ -516,6 +516,7 @@ const pause = () => {
 const play = () => {
 	const gameLoop = setTimeout(() => {
 		next()
+		
 		requestAnimationFrame(play)
 	}, speed)
 	if (!playing || reversing) clearTimeout(gameLoop)
@@ -530,8 +531,8 @@ const reverse = () => {
 }
 
 const prev = () => {
-	stopMsg.style.display = 'none'
 	stopped = false
+	stopMsg.style.display = 'none'
 	if (!(Number(PreviousGens.length) >= 0)) return
 	if (PreviousGens.length >= 2 && generation >= 1) {
 		board.grid = PreviousGens[PreviousGens.length - 2]
@@ -774,21 +775,19 @@ window.addEventListener(
 window.addEventListener(
 	'keydown',
 	event => {
-		if (event.key === ' ' && started) {
-			if (!playing) {
-				if (!stopped) {
-					reversing = false
-					playing = true
-					play()
-				}
+		if (event.key === ' ' && !editing) {
+			if (!playing && !stopped) {
+				reversing = false
+				playing = true
+				play()
 			} else {
 				reversing = false
 				playing = false
 			}
 		}
 
-		if (event.key === 'ArrowLeft' && generation >= 1 && !reversing) prev()
-		if (event.key === 'ArrowRight' && !playing) next()
+		if (event.key === 'ArrowLeft' && generation >= 1 && !reversing && !editing) prev()
+		if (event.key === 'ArrowRight' && !playing && !editing && !stopped) next()
 
 		type ObjectKey = 'rule1' | 'rule2' | 'rule3'
 		if (event.key === 'Escape') {
@@ -834,7 +833,7 @@ window.addEventListener(
 	() => {
 		Canvas.ctx.canvas.width = drawBoard.clientWidth
 		Canvas.ctx.canvas.height = drawBoard.clientHeight
-		if (started) Canvas.renderCanvas()
+		if (!editing) Canvas.renderCanvas()
 	},
 	{ passive: true }
 )
@@ -883,7 +882,7 @@ reverseBtn.addEventListener(
 playBtn.addEventListener(
 	'click',
 	() => {
-		if (!stopped) {
+		if (!playing && !stopped) {
 			reversing = false
 			playing = true
 			play()
@@ -899,8 +898,7 @@ stopBtn.addEventListener('click', () => stopSimulation(), { passive: true })
 startBtn.addEventListener(
 	'click',
 	() => {
-		stopped = false
-		started = true
+		editing = false
 		start()
 	},
 	{ passive: true }
@@ -917,7 +915,7 @@ previousBtn.addEventListener(
 nextBtn.addEventListener(
 	'click',
 	() => {
-		if (!playing) next()
+		if (!playing && !stopped) next()
 	},
 	{ passive: true }
 )

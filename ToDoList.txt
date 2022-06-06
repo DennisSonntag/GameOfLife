@@ -1,5 +1,2 @@
 Game of life to do list
--fix play twice click
--fix toggle bw next 
--fix stop msg in edit pane
--responsive
+-empty... for now
