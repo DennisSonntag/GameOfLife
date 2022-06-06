@@ -1,5 +1,6 @@
 import './style.css'
 
+// Getting all elements from the dom
 const generationTitle = document.getElementById('genTitle') as HTMLHeadingElement
 const editBoard = document.getElementById('board') as HTMLDivElement
 const sizeSlider = document.getElementById('range') as HTMLInputElement
@@ -39,9 +40,12 @@ const rawSlider = document.getElementById('range') as HTMLInputElement
 const rangeInfoBubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
 
+// Declaring the canvas class which is used to draw the simulation
 class Canvas {
+	// initializing the canvas
 	static canvas = document.querySelector('canvas') as HTMLCanvasElement
 	static ctx = Canvas.canvas.getContext('2d') as CanvasRenderingContext2D
+	// the render canvas method renders all data passed to the function
 	static renderCanvas = () => {
 		const size = editBoard.clientWidth / sideLengthInCells
 		for (let row = 0; row < board.grid.length; row++) {
@@ -85,6 +89,7 @@ class Canvas {
 				const square = document.getElementById(String(row * sideLengthInCells + col)) as HTMLDivElement
 				const rawColorData = square.style.backgroundColor
 				const currentRgb = getRgbDataFromString(rawColorData)
+				// checking weather to draw the cell with avrage color or not or white for dead cells
 				if (cell === Board.alive) {
 					if (generationNumber <= 1) {
 						const [h, s, l] = getColorValueFromIndex(row * sideLengthInCells + col)
@@ -109,14 +114,16 @@ class Canvas {
 			}
 		}
 	}
-
+	// clearing all contents from canvas
 	static clearCanvas = () => {
 		Canvas.ctx.clearRect(0, 0, Number(Canvas.canvas.width), Number(Canvas.canvas.height))
 		Canvas.renderCanvas()
 	}
 }
 
+// declaring the calculations subclass
 class Calculations {
+	//this method is passed the current grid and applies all the rules to it then returns the new generation
 	static calculateNextGeneration = (grid: number[][]) => {
 		const gridCopy = grid.map((arr: number[]) => [...arr])
 		for (let row = 0; row < grid.length; row++) {
@@ -142,6 +149,7 @@ class Calculations {
 	}
 }
 
+// this is the main board class that
 class Board extends Calculations {
 	static colors = {
 		dark: '#15171c',
@@ -562,9 +570,13 @@ const checkColorStop = (row: number, col: number, div: HTMLDivElement) => (div.s
 
 const bounceAnim = (div: HTMLDivElement) => {
 	div.classList.add('bounceAnim')
-	setTimeout(() => {
-		div.classList.remove('bounceAnim')
-	}, 300)
+	div.addEventListener(
+		'animationend',
+		() => {
+			div.classList.remove('bounceAnim')
+		},
+		{ once: true }
+	)
 }
 
 const populate = () => {
@@ -680,6 +692,7 @@ window.addEventListener(
 window.addEventListener('mouseup', () => (isDragging = false), { passive: true })
 
 resetDefaultBtn.addEventListener('click', () => {
+	speedInput.value = String(50)
 	rules = defaultRules
 	ruleSection.innerHTML = `<div class="rule">
 								<p>Any</p>
@@ -783,7 +796,11 @@ window.addEventListener(
 			isModalActive = !isModalActive
 			modalBackground.style.display = isModalActive ? 'initial' : 'none'
 			if (!isModalActive) {
-				speed = Number(speedInput.value || speedInput.getAttribute('placeholder'))
+				try {
+					speed = Number(speedInput.value || speedInput.getAttribute('placeholder'))
+				} catch (error) {
+					alert('please enter a number')
+				}
 				const rawRules = getRules(Array.from(ruleSection.children))
 				let propertyName = 'rule0'
 				for (let row = 0; row < rawRules.length; row++) {
