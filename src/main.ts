@@ -12,8 +12,9 @@ const toggleBWText = document.getElementById('toggleBWText') as HTMLParagraphEle
 const clearBtn = document.getElementById('clear') as HTMLButtonElement
 const startBtn = document.getElementById('start') as HTMLButtonElement
 const colorPicker = document.getElementById('color') as HTMLInputElement
+const keys = document.getElementById('keys') as HTMLParagraphElement
 
-const startingElements = [toggleBWBtn, fillColorBtn, fillRandomBtn, clearBtn, fillBucketText, startBtn, fillBucketBtn, colorPicker]
+const startingElements = [toggleBWBtn, keys, fillColorBtn, fillRandomBtn, clearBtn, fillBucketText, startBtn, fillBucketBtn, colorPicker]
 
 const previousBtn = document.getElementById('prev') as HTMLButtonElement
 const resetBtn = document.getElementById('reset') as HTMLButtonElement

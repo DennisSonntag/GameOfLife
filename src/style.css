@@ -261,6 +261,7 @@ label {
 }
 
 input[type='color'] {
+	z-index: 5;
 	-webkit-appearance: none;
 	border-radius: 1000px;
 	border: none;
@@ -287,9 +288,8 @@ input[type='color']::-webkit-color-swatch {
 	margin: 0;
 	position: absolute;
 	width: 100%;
-	z-index: 3;
+	z-index: 8;
 }
-
 #settingModalText {
 	position: absolute;
 
@@ -298,6 +298,11 @@ input[type='color']::-webkit-color-swatch {
 	margin-block: 1rem;
 	inset-inline: 0;
 	margin-inline: auto;
+}
+
+#keys {
+	color: var(--text-color);
+	font-size: 1rem;
 }
 
 #speedTitle {
