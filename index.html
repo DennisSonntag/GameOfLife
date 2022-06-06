@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+p<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
@@ -6,7 +6,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<script defer type="module" src="/src/main.ts"></script>
 		<meta name="description" content="conway's game of life with my own spin on it" />
-		<meta name="theme-color" content="#282c34"> 
+		<meta name="theme-color" content="#282c34" />
 		<title>Game Of Life</title>
 	</head>
 	<body>
@@ -59,44 +59,56 @@
 		</main>
 		<section id="modalBackground">
 			<h1 id="settingModalText">Settings</h1>
-			<h2 id="speedTitle">Speed in ms</h2>
-			<input type="text" id="speedInput" placeholder="50" />
-			<button type="button" id="addRuleBtn">Add Rule</button>
+			<label for="speed" id="speedTitle">Speed in ms</label>
+			<input name="speed" type="number" id="speedInput" placeholder="50" />
+			<button type="button" id="resetDef"><p>Reset To Default</p></button>
 			<section id="ruleSection">
 				<div class="rule">
-					<div class="ruleLeft ruleRightLeft">
-						<p>If</p>
-						<button class="deadAlive"><p>Dead</p></button>
-					</div>
-					<div class="ruleMiddle">
-						<div class="middleLeft">
-							<p>And Neighbors</p>
-						</div>
-						<div class="ruleInput">
-							<div class="inputSec great">
-								<div class="labelWrap">
-									<label for="great"> >  </label>
-								</div>
-								<input name="great" type="text" />
-							</div>
-							<div class="inputSec less">
-								<div class="labelWrap">
-									<label for="less"> &#60 </label>
-								</div>
-								<input name="less" type="text" />
-							</div>
-							<div class="inputSec equal">
-								<div class="labelWrap">
-									<label for="equal"> = </label>
-								</div>
-								<input name="equal" type="text" />
-							</div>
-						</div>
-					</div>
-					<div class="ruleRight ruleRightLeft">
-						<p>Then</p>
-						<button class="deadAlive"><p>Dead</p></button>
-					</div>
+					<p>Any</p>
+					<button class="deadAlive"><p>Alive</p></button>
+					<p>Cell With</p>
+					<p>&#60;</p>
+					<input
+						name="neighbors"
+						oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+						type="number"
+						maxlength="1"
+						placeholder="2"
+					/>
+					<p>Neighbors</p>
+					<button class="diesLives deadAlive"><p>Dies</p></button>
+				</div>
+
+				<div class="rule">
+					<p>Any</p>
+					<button class="deadAlive"><p>Alive</p></button>
+					<p>Cell With</p>
+					<p>&#62;</p>
+					<input
+						name="neighbors"
+						oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+						type="number"
+						maxlength="1"
+						placeholder="3"
+					/>
+					<p>Neighbors</p>
+					<button class="diesLives deadAlive"><p>Dies</p></button>
+				</div>
+
+				<div class="rule">
+					<p>Any</p>
+					<button class="deadAlive"><p>Dead</p></button>
+					<p>Cell With</p>
+					<p>&#61;</p>
+					<input
+						name="neighbors"
+						oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+						type="number"
+						maxlength="1"
+						placeholder="3"
+					/>
+					<p>Neighbors</p>
+					<button class="diesLives deadAlive"><p>Lives</p></button>
 				</div>
 			</section>
 		</section>

@@ -26,10 +26,8 @@ const stopBtn = document.getElementById('stop') as HTMLButtonElement
 const secondElements = [previousBtn, resetBtn, nextBtn, playBtn, reverseBtn, pauseBtn, stopBtn, genTitle]
 
 const modalBackground = document.getElementById('modalBackground') as HTMLDivElement
-const addRuleBtn = document.getElementById('addRuleBtn') as HTMLButtonElement
-const ruleSection = document.getElementById('ruleSection') as HTMLSelectElement
-// const settingModal = document.getElementById('settingModal') as HTMLDivElement
-// const settingModalText = document.getElementById('settingModalText') as HTMLParagraphElement
+const ruleSection = document.getElementById('ruleSection') as HTMLDivElement
+const speedInput = document.getElementById('speedInput') as HTMLInputElement
 
 const stopMsg = document.getElementById('stopMsg') as HTMLParagraphElement
 const up = document.getElementById('up') as HTMLElement & SVGElement
@@ -37,8 +35,7 @@ const down = document.getElementById('down') as HTMLElement & SVGElement
 const range = document.getElementById('range') as HTMLInputElement
 const bubble = document.querySelector('#bubble') as HTMLOutputElement
 const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement
-// const deadAliveBtn = document.querySelectorAll('.deadAlive') as NodeListOf<Element>
-
+const resetDefaultBtn = document.getElementById('resetDef') as HTMLButtonElement
 const arrayAllEqual = (arr: number[]) => {
 	let isEqual = true
 	const firstEl = arr[0]
@@ -144,9 +141,9 @@ class Calculations {
 					}
 				}
 				// rules
-				if (oldCell === 1 && numNeighbours < 2) gridCopy[row][col] = Board.dead
-				else if (oldCell === 1 && numNeighbours > 3) gridCopy[row][col] = Board.dead
-				else if (oldCell === 0 && numNeighbours === 3) gridCopy[row][col] = Board.alive
+				if (oldCell === rules.rule1.liveDead && numNeighbours < rules.rule1.numNeighbors) gridCopy[row][col] = rules.rule1.livesDies
+				else if (oldCell === rules.rule2.liveDead && numNeighbours > rules.rule2.numNeighbors) gridCopy[row][col] = rules.rule2.livesDies
+				else if (oldCell === rules.rule3.liveDead && numNeighbours === rules.rule3.numNeighbors) gridCopy[row][col] = rules.rule3.livesDies
 			}
 		}
 		return gridCopy
@@ -176,6 +173,7 @@ const PreviousGens: number[][][] = []
 let CanvasColors: string[][] = []
 let fillBucketActive = false
 let fillBucketInfo: number
+let speed = 50
 let sideLengthCells = 8
 // false : color; true: black and white
 let blackWhite = false
@@ -189,6 +187,41 @@ let drawMode = true
 let started = false
 let generation = 0
 const board = new Board(sideLengthCells)
+let rules = {
+	rule1: {
+		liveDead: 1,
+		numNeighbors: 2,
+		livesDies: 0,
+	},
+	rule2: {
+		liveDead: 1,
+		numNeighbors: 3,
+		livesDies: 0,
+	},
+	rule3: {
+		liveDead: 0,
+		numNeighbors: 3,
+		livesDies: 1,
+	},
+}
+
+const defaultRules = {
+	rule1: {
+		liveDead: 1,
+		numNeighbors: 2,
+		livesDies: 0,
+	},
+	rule2: {
+		liveDead: 1,
+		numNeighbors: 3,
+		livesDies: 0,
+	},
+	rule3: {
+		liveDead: 0,
+		numNeighbors: 3,
+		livesDies: 1,
+	},
+}
 
 // ------Pan and zoom section----------------
 
@@ -484,7 +517,7 @@ const play = () => {
 	const gameLoop = setTimeout(() => {
 		next()
 		requestAnimationFrame(play)
-	}, 50)
+	}, speed)
 	if (!playing || reversing) clearTimeout(gameLoop)
 }
 
@@ -492,8 +525,7 @@ const reverse = () => {
 	const reverseLoop = setTimeout(() => {
 		prev()
 		requestAnimationFrame(reverse)
-	}, 50)
-	// speed
+	}, speed)
 	if (!reversing || playing) clearTimeout(reverseLoop)
 }
 
@@ -657,14 +689,84 @@ window.addEventListener(
 
 window.addEventListener('mouseup', () => (isDragging = false), { passive: true })
 
+resetDefaultBtn.addEventListener('click', () => {
+	rules = defaultRules
+	ruleSection.innerHTML = `<div class="rule">
+	<p>Any</p>
+	<button class="deadAlive"><p>Alive</p></button>
+	<p>Cell With</p>
+	<p>&#60;</p>
+	<input
+		name="neighbors"
+		oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+		type="number"
+		maxlength="1"
+		placeholder="2"
+	/>
+	<p>Neighbors</p>
+	<button class="diesLives deadAlive"><p>Dies</p></button>
+</div>
+
+<div class="rule">
+	<p>Any</p>
+	<button class="deadAlive"><p>Alive</p></button>
+	<p>Cell With</p>
+	<p>&#62;</p>
+	<input
+		name="neighbors"
+		oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+		type="number"
+		maxlength="1"
+		placeholder="3"
+	/>
+	<p>Neighbors</p>
+	<button class="diesLives deadAlive"><p>Dies</p></button>
+</div>
+
+<div class="rule">
+	<p>Any</p>
+	<button class="deadAlive"><p>Dead</p></button>
+	<p>Cell With</p>
+	<p>&#61;</p>
+	<input
+		name="neighbors"
+		oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+		type="number"
+		maxlength="1"
+		placeholder="3"
+	/>
+	<p>Neighbors</p>
+	<button class="diesLives deadAlive"><p>Lives</p></button>
+</div>`
+})
+
 window.addEventListener(
 	'click',
-	event => {
-		const target = event.target as HTMLButtonElement
-		if (target.className !== 'deadAlive') return
-		const child = target.firstChild as HTMLParagraphElement
-		if (child.innerText === 'Dead') target.innerHTML = '<p>Alive</p>'
-		if (child.innerText === 'Alive') target.innerHTML = '<p>Dead</p>'
+	e => {
+		const target = e.target as HTMLButtonElement
+		if (target.className === 'deadAlive') {
+			const child = target.firstChild as HTMLParagraphElement
+			if (child.innerText === 'Dead') {
+				target.innerHTML = '<p>Alive</p>'
+				;((target.parentElement as HTMLDivElement).children[6].firstChild as HTMLParagraphElement).innerText = 'Dies'
+			}
+			if (child.innerText === 'Alive') {
+				target.innerHTML = '<p>Dead</p>'
+				;((target.parentElement as HTMLDivElement).children[6].firstChild as HTMLParagraphElement).innerText = 'Lives'
+			}
+		}
+
+		if (target.className === 'diesLives deadAlive') {
+			const child = target.firstChild as HTMLParagraphElement
+			if (child.innerText === 'Dies') {
+				target.innerHTML = '<p>Lives</p>'
+				;((target.parentElement as HTMLDivElement).children[1].firstChild as HTMLParagraphElement).innerText = 'Dead'
+			}
+			if (child.innerText === 'Lives') {
+				target.innerHTML = '<p>Dies</p>'
+				;((target.parentElement as HTMLDivElement).children[1].firstChild as HTMLParagraphElement).innerText = 'Alive'
+			}
+		}
 	},
 	{ passive: true }
 )
@@ -685,19 +787,47 @@ window.addEventListener(
 			}
 		}
 
-		if (event.key === 'ArrowLeft' && generation >= 1 && !reversing) {
-			prev()
-		}
-		if (event.key === 'ArrowRight' && !playing) {
-			next()
-		}
+		if (event.key === 'ArrowLeft' && generation >= 1 && !reversing) prev()
+		if (event.key === 'ArrowRight' && !playing) next()
+
+		type ObjectKey = 'rule1' | 'rule2' | 'rule3'
 		if (event.key === 'Escape') {
 			modalActive = !modalActive
 			modalBackground.style.display = modalActive ? 'initial' : 'none'
+			if (!modalActive) {
+				speed = Number(speedInput.value || speedInput.getAttribute('placeholder'))
+				const rawRules = getRules(Array.from(ruleSection.children))
+				let propertyName = 'rule0'
+				for (let row = 0; row < rawRules.length; row++) {
+					propertyName = `rule${row + 1}`
+					for (let col = 0; col < rawRules[0].length; col++) {
+						rules[propertyName as ObjectKey].liveDead = rawRules[row][0]
+						rules[propertyName as ObjectKey].numNeighbors = rawRules[row][1]
+						rules[propertyName as ObjectKey].livesDies = rawRules[row][2]
+					}
+				}
+			}
 		}
 	},
 	{ passive: true }
 )
+
+const getRules = (rules: Element[]) => {
+	const result: number[][] = new Array(3).fill(0).map(() => new Array(3).fill(0))
+
+	for (let i = 0; i < 3; i++) {
+		if ((Array.from(rules[i].children)[1].firstChild as HTMLParagraphElement).innerText === 'Alive') result[i][0] = 1
+		else result[i][0] = 0
+
+		const num1 = Array.from(rules[i].children)[4] as HTMLInputElement
+		result[i][1] = Number(num1.value || num1.getAttribute('placeholder'))
+
+		if ((Array.from(rules[i].children)[6].firstChild as HTMLParagraphElement).innerText === 'Lives') result[i][2] = 1
+		else result[i][2] = 0
+	}
+
+	return result
+}
 
 window.addEventListener(
 	'resize',
@@ -758,51 +888,6 @@ playBtn.addEventListener(
 			playing = true
 			play()
 		}
-	},
-	{ passive: true }
-)
-
-addRuleBtn.addEventListener(
-	'click',
-	() => {
-		const rule = document.createElement('div')
-		rule.className = 'rule'
-		rule.innerHTML = `<div class="ruleLeft ruleRightLeft">
-							<p>If</p>
-							<button class="deadAlive"><p>Dead</p></button>
-						</div>
-						<div class="ruleMiddle">
-							<div class="middleLeft">
-								<p>And Neighbors</p>
-							</div>
-							<div class="ruleInput">
-								<div class="inputSec great">
-									<div class="labelWrap">
-										<label for="great"> >  </label>
-									</div>
-									<input name="great" type="text" />
-								</div>
-								<div class="inputSec less">
-									<div class="labelWrap">
-										<label for="less"> &#60 </label>
-									</div>
-									<input name="less" type="text" />
-								</div>
-								<div class="inputSec equal">
-									<div class="labelWrap">
-										<label for="equal"> = </label>
-									</div>
-									<input name="equal" type="text" />
-								</div>
-							</div>
-						</div>
-						<div class="ruleRight ruleRightLeft">
-							<p>Then</p>
-							<button class="deadAlive"><p>Dead</p></button>
-						</div>`
-
-		ruleSection.appendChild(rule)
-		ruleSection.scrollTop = ruleSection.scrollHeight
 	},
 	{ passive: true }
 )

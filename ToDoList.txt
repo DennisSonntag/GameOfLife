@@ -1,7 +1,4 @@
 Game of life to do list
--make settings look better
--finish settings page
--fix black white 
 -fix play twice click
 -fix toggle bw next 
 -fix stop msg in edit pane
