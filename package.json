@@ -1,5 +1,5 @@
 {
-	"name": "frontend",
+	"name": "conwaysgameoflife",
 	"private": true,
 	"version": "1.3.0",
 	"scripts": {
