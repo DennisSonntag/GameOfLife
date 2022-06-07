@@ -45,8 +45,6 @@ const rangeWrap = document.getElementById('rangeWrap') as HTMLDivElement;
 const canvas = document.querySelector('canvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-// this is the main board class that
-
 const colors = {
 	dark: '#15171c',
 	light: 'white',
@@ -59,35 +57,33 @@ const sliderMax = Number(sizeSlider.getAttribute('max'));
 
 const PreviousGens: number[][][] = [];
 let canvasColors: string[][] = [];
-let fillBucketActive = false;
 let fillBucketInfo: number;
-let speed = 50;
+let fillBucketActive = false;
 let sideLengthInCells = 8;
-// false : color; true: black and white
-let isBlackWhite = false;
-let isDragging = false;
 let isModalActive = false;
+let isBlackWhite = false;
 let isReversing = false;
+let isDragging = false;
 let isPlaying = false;
 let isStopped = false;
 let isEditing = true;
-// true = draw; false = erase;
 let drawMode = true;
-let generationNumber = 0;
 let board: number[][] = [];
-let rules = {
+let generationNumber = 0;
+let speed = 50;
+let Rules = {
 	rule1: {
-		livedead: 1,
+		liveDead: 1,
 		numNeighbors: 2,
 		livesDies: 0,
 	},
 	rule2: {
-		livedead: 1,
+		liveDead: 1,
 		numNeighbors: 3,
 		livesDies: 0,
 	},
 	rule3: {
-		livedead: 0,
+		liveDead: 0,
 		numNeighbors: 3,
 		livesDies: 1,
 	},
@@ -95,17 +91,17 @@ let rules = {
 
 const defaultRules = {
 	rule1: {
-		livedead: 1,
+		liveDead: 1,
 		numNeighbors: 2,
 		livesDies: 0,
 	},
 	rule2: {
-		livedead: 1,
+		liveDead: 1,
 		numNeighbors: 3,
 		livesDies: 0,
 	},
 	rule3: {
-		livedead: 0,
+		liveDead: 0,
 		numNeighbors: 3,
 		livesDies: 1,
 	},
@@ -228,7 +224,7 @@ const renderCanvas = () => {
 			const square = document.getElementById(String(row * sideLengthInCells + col)) as HTMLDivElement;
 			const rawColorData = square.style.backgroundColor;
 			const currentRgb = getRgbDataFromString(rawColorData);
-			// checking weather to draw the cell with avrage color or not or white for dead cells
+			// checking weather to draw the cell with average color or not or white for dead cells
 			if (cell === alive) {
 				if (generationNumber <= 1) {
 					const [h, s, l] = getColorValueFromIndex(row * sideLengthInCells + col);
@@ -278,9 +274,9 @@ const calculateNextGeneration = (grid: number[][]) => {
 				}
 			}
 			// rules
-			if (oldCell === rules.rule1.livedead && numNeighbours < rules.rule1.numNeighbors) gridCopy[row][col] = rules.rule1.livesDies;
-			else if (oldCell === rules.rule2.livedead && numNeighbours > rules.rule2.numNeighbors) gridCopy[row][col] = rules.rule2.livesDies;
-			else if (oldCell === rules.rule3.livedead && numNeighbours === rules.rule3.numNeighbors) gridCopy[row][col] = rules.rule3.livesDies;
+			if (oldCell === Rules.rule1.liveDead && numNeighbours < Rules.rule1.numNeighbors) gridCopy[row][col] = Rules.rule1.livesDies;
+			else if (oldCell === Rules.rule2.liveDead && numNeighbours > Rules.rule2.numNeighbors) gridCopy[row][col] = Rules.rule2.livesDies;
+			else if (oldCell === Rules.rule3.liveDead && numNeighbours === Rules.rule3.numNeighbors) gridCopy[row][col] = Rules.rule3.livesDies;
 		}
 	}
 	return gridCopy;
@@ -398,30 +394,6 @@ const setGeneration = (value: number) => {
 	generationTitle.innerText = `Generation : ${generationNumber}`;
 };
 
-const stopSimulation = () => {
-	isStopped = false;
-	stopMsg.style.display = 'none';
-	clearCanvas();
-	isEditing = true;
-	populateStop();
-	pause();
-	changeStylesFromCanvas();
-	if (sideLengthInCells >= 20) changeStylesSliderLarge();
-	if (sideLengthInCells <= 20) changeStylesSliderSmall();
-	startingElements.forEach(element => (element.style.display = 'initial'));
-	left.style.display = 'grid';
-	secondElements.forEach(element => (element.style.display = 'none'));
-	stopMsg.style.display = 'none';
-};
-
-const start = () => {
-	PreviousGens.push(board);
-	renderCanvas();
-	changeStylesToCanvas();
-	startingElements.forEach(element => (element.style.display = 'none'));
-	secondElements.forEach(element => (element.style.display = 'initial'));
-};
-
 const checkEqualValueMatrix = (matrix1: number[][], matrix2: number[][], matrix3: number[][]) => {
 	if (matrix1 === undefined && matrix2 === undefined && matrix3 === undefined) return;
 	let isEqual = true;
@@ -501,15 +473,6 @@ const changeBoardSize = (size: number) => {
 
 const getColorValueFromIndex = (id: number) => RGBToHSL(String(document.getElementById(String(id))?.style.backgroundColor));
 
-const reset = () => {
-	stopMsg.style.display = 'none';
-	isDragging = false;
-	isPlaying = false;
-	drawMode = true;
-	board = makeBoardArrayNumber(sideLengthInCells);
-	setGeneration(0);
-	clearCanvas();
-};
 const pause = () => {
 	isReversing = false;
 	isPlaying = false;
@@ -634,6 +597,23 @@ const populateStop = () => {
 	}
 };
 
+const getRules = (rules: Element[]) => {
+	const result: number[][] = new Array(3).fill(0).map(() => new Array(3).fill(0));
+
+	for (let i = 0; i < 3; i++) {
+		if ((Array.from(rules[i].children)[1].firstChild as HTMLParagraphElement).innerText === 'alive') result[i][0] = 1;
+		else result[i][0] = 0;
+
+		const num1 = Array.from(rules[i].children)[4] as HTMLInputElement;
+		result[i][1] = Number(num1.value || num1.getAttribute('placeholder'));
+
+		if ((Array.from(rules[i].children)[6].firstChild as HTMLParagraphElement).innerText === 'Lives') result[i][2] = 1;
+		else result[i][2] = 0;
+	}
+
+	return result;
+};
+
 window.addEventListener(
 	'load',
 	() => {
@@ -644,7 +624,7 @@ window.addEventListener(
 		setSliderInfoBubble(rawSlider, rangeInfoBubble);
 		populate();
 	},
-	{ passive: true }
+	{ passive: true, once: true }
 );
 
 window.addEventListener(
@@ -689,7 +669,7 @@ window.addEventListener('mouseup', () => (isDragging = false), { passive: true }
 
 resetDefaultBtn.addEventListener('click', () => {
 	speedInput.value = String(50);
-	rules = defaultRules;
+	Rules = defaultRules;
 	ruleSection.innerHTML = `<div class="rule">
 								<p>Any</p>
 								<button class="deadalive"><p>alive</p></button>
@@ -802,9 +782,9 @@ window.addEventListener(
 				for (let row = 0; row < rawRules.length; row++) {
 					propertyName = `rule${row + 1}`;
 					for (let col = 0; col < rawRules[0].length; col++) {
-						rules[propertyName as ObjectKey].livedead = rawRules[row][0];
-						rules[propertyName as ObjectKey].numNeighbors = rawRules[row][1];
-						rules[propertyName as ObjectKey].livesDies = rawRules[row][2];
+						Rules[propertyName as ObjectKey].liveDead = rawRules[row][0];
+						Rules[propertyName as ObjectKey].numNeighbors = rawRules[row][1];
+						Rules[propertyName as ObjectKey].livesDies = rawRules[row][2];
 					}
 				}
 			}
@@ -812,23 +792,6 @@ window.addEventListener(
 	},
 	{ passive: true }
 );
-
-const getRules = (rules: Element[]) => {
-	const result: number[][] = new Array(3).fill(0).map(() => new Array(3).fill(0));
-
-	for (let i = 0; i < 3; i++) {
-		if ((Array.from(rules[i].children)[1].firstChild as HTMLParagraphElement).innerText === 'alive') result[i][0] = 1;
-		else result[i][0] = 0;
-
-		const num1 = Array.from(rules[i].children)[4] as HTMLInputElement;
-		result[i][1] = Number(num1.value || num1.getAttribute('placeholder'));
-
-		if ((Array.from(rules[i].children)[6].firstChild as HTMLParagraphElement).innerText === 'Lives') result[i][2] = 1;
-		else result[i][2] = 0;
-	}
-
-	return result;
-};
 
 window.addEventListener(
 	'resize',
@@ -866,8 +829,19 @@ toggleBWBtn.addEventListener(
 
 colorPicker.addEventListener('input', () => (colors.draw = colorPicker.value), { passive: true });
 
-// hasReset = true
-resetBtn.addEventListener('click', () => reset(), { passive: true });
+resetBtn.addEventListener(
+	'click',
+	() => {
+		stopMsg.style.display = 'none';
+		isDragging = false;
+		isPlaying = false;
+		drawMode = true;
+		board = makeBoardArrayNumber(sideLengthInCells);
+		setGeneration(0);
+		clearCanvas();
+	},
+	{ passive: true }
+);
 
 reverseBtn.addEventListener(
 	'click',
@@ -895,13 +869,35 @@ playBtn.addEventListener(
 
 pauseBtn.addEventListener('click', () => pause(), { passive: true });
 
-stopBtn.addEventListener('click', () => stopSimulation(), { passive: true });
+stopBtn.addEventListener(
+	'click',
+	() => {
+		isStopped = false;
+		stopMsg.style.display = 'none';
+		clearCanvas();
+		isEditing = true;
+		populateStop();
+		pause();
+		changeStylesFromCanvas();
+		if (sideLengthInCells >= 20) changeStylesSliderLarge();
+		if (sideLengthInCells <= 20) changeStylesSliderSmall();
+		startingElements.forEach(element => (element.style.display = 'initial'));
+		left.style.display = 'grid';
+		secondElements.forEach(element => (element.style.display = 'none'));
+		stopMsg.style.display = 'none';
+	},
+	{ passive: true }
+);
 
 startBtn.addEventListener(
 	'click',
 	() => {
 		isEditing = false;
-		start();
+		PreviousGens.push(board);
+		renderCanvas();
+		changeStylesToCanvas();
+		startingElements.forEach(element => (element.style.display = 'none'));
+		secondElements.forEach(element => (element.style.display = 'initial'));
 	},
 	{ passive: true }
 );
